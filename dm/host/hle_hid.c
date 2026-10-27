@@ -187,6 +187,7 @@ uint32_t dm_player_npad(int p) { return p <= 0 ? connected_id() : (uint32_t)p; }
 // The players with a controller (bit p = player p + 1, from the front end's dm_pad_players; player 1 always) and the npads the game supports (bit id for No1..No8, bit 8
 // Handheld, bit 9 Other: all of them until SetSupportedNpadIdType, as the hid service starts)
 static _Atomic uint32_t g_players = 1, g_ids_supported = 0x3ff;
+static _Atomic int g_tabletop_multi;
 static uint32_t id_bit(uint32_t id) { return id < DM_PLAYERS ? 1u << id : id == NPAD_HANDHELD ? 1u << 8 : id == 0x10 ? 1u << 9 : 0; }
 static int reported(int p) { return p == 0 || (atomic_load(&g_players) >> p & 1 && atomic_load(&g_ids_supported) & id_bit((uint32_t)p)); }
 // Players with a controller whose npad the game does not support. A one-player game (no npad past No1 supported) gets them as player 1, so any controller plays it; in a game for
@@ -199,6 +200,7 @@ static int one_player(void) { return !(atomic_load(&g_ids_supported) & ((1u << D
 static uint32_t merged_players(void) { return one_player() ? unsupported_players() : 0; }
 static int player_of(uint32_t id) {   // the reported player on npad id; -1 when none
     if (id == connected_id()) return 0;
+    if (id == NPAD_NO1 && atomic_load(&g_tabletop_multi)) return 0;
     return id > 0 && id < DM_PLAYERS && reported((int)id) ? (int)id : -1;
 }
 static uint32_t style_of(uint32_t id) { return player_of(id) < 0 ? 0 : id == NPAD_HANDHELD ? STYLE_HANDHELD : STYLE_FULLKEY; }
@@ -273,6 +275,7 @@ HLE_FORCE("_ZN2nn3hid22SetSupportedNpadIdTypeEPKjm", "supported controller ids; 
     uint32_t m = 0; for (uint64_t i = 0; ids && i < n; i++) m |= id_bit(ids[i]);
     uint32_t was = 0; for (int p = 1; p < DM_PLAYERS; p++) was |= (uint32_t)reported(p) << p;
     if (atomic_exchange(&g_ids_supported, m) == m) return;
+    if (one_player()) atomic_store(&g_tabletop_multi, 0);
     for (int p = 0; p < DM_PLAYERS; p++) dm_haptics_clear(p);
     LOG("hid supported controller ids %#x (bit n: No n+1, bit 8 Handheld, bit 9 Other)", m);
     for (int p = 1; p < DM_PLAYERS; p++) if ((uint32_t)reported(p) != (was >> p & 1)) style_changed((uint32_t)p);
@@ -301,7 +304,10 @@ HLE_FORCE("_ZN2nn3hid21ShowControllerSupportEPNS0_27ControllerSupportResultInfoE
           Result, h_hid_ShowCtrl, int32_t *info, const int8_t *arg) {
     int count = 0; for (int p = 0; p < DM_PLAYERS; p++) count += reported(p);
     if (arg && arg[1] > 0 && count > arg[1]) count = arg[1];
-    if (info) { info[0] = count; info[1] = (int32_t)connected_id(); }
+    if (arg && arg[0] >= 2) { atomic_store(&g_tabletop_multi, 1); style_changed(0); }
+    uint32_t sel = atomic_load(&g_tabletop_multi) ? NPAD_NO1 : connected_id();
+    if (info) { info[0] = count; info[1] = (int32_t)sel; }
+    LOG("hid: ShowControllerSupport(info, min %d, max %d) → count %d, selected %d", arg ? arg[0] : 0, arg ? arg[1] : 0, count, sel);
     return RES_OK;
 }
 // Six-axis sensor (accelerometer + gyroscope) of the connected controller. SixAxisSensorState (0x60): acceleration in G, angular velocity in revolutions / s, angle in revolutions,
@@ -465,7 +471,11 @@ HLE_FORCE("_ZN2nn3hid19GetPlayerLedPatternERKj", "player LED: the Switch's patte
 static void ctrl_color(uint32_t *c) { c[0] = 0xff828282u; c[1] = 0xff0f0f0fu; }
 HLE_FORCE("_ZN2nn3hid22GetNpadControllerColorEPNS0_19NpadControllerColorERKj", "controller color", Result, h_hid_Color, uint32_t *c, const uint32_t *id) { (void)id; ctrl_color(c); return RES_OK; }
 HLE_FORCE("_ZN2nn3hid22GetNpadControllerColorEPNS0_19NpadControllerColorES2_RKj", "left and right Joy-Con colors", Result, h_hid_Color2, uint32_t *l, uint32_t *r, const uint32_t *id) { (void)id; ctrl_color(l); ctrl_color(r); return RES_OK; }
-HLE_FORCE("_ZN2nn3hid21ShowControllerSupportERKNS0_20ControllerSupportArgE", "controller applet (no result wanted); the host reports a selection right away", Result, h_hid_ShowCtrl0, const void *arg) { (void)arg; return RES_OK; }
+HLE_FORCE("_ZN2nn3hid21ShowControllerSupportERKNS0_20ControllerSupportArgE", "controller applet (no result wanted); the host reports a selection right away", Result, h_hid_ShowCtrl0, const int8_t *arg) {
+    if (arg && arg[0] >= 2) { atomic_store(&g_tabletop_multi, 1); style_changed(0); }
+    LOG("hid: ShowControllerSupport(min %d, max %d)", arg ? arg[0] : 0, arg ? arg[1] : 0);
+    return RES_OK;
+}
 HLE_FORCE("_ZN2nn3hid24ShowControllerStrapGuideEv", "strap guide applet; not shown by the host", Result, h_hid_Strap, void) { return RES_OK; }
 HLE_FORCE("_ZN2nn3hid28ShowControllerFirmwareUpdateERKNS0_27ControllerFirmwareUpdateArgE", "controller firmware update applet; not shown by the host", Result, h_hid_FwUpd, const void *arg) { (void)arg; return RES_OK; }
 

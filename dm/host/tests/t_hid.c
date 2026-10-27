@@ -118,6 +118,12 @@ static void t_npads(void) {
     CHECK(buttons_of(NPAD_HANDHELD, STYLE_HANDHELD) == DM_BTN_Y && buttons_of(1, STYLE_FULLKEY) == DM_BTN_L, "handheld: each player its own input");
     h_hid_ShowCtrl(info, NULL);
     CHECK(info[0] == 2 && info[1] == NPAD_HANDHELD, "handheld: the applet selects the handheld controller");
+
+    // Handheld multiplayer: ShowControllerSupport with min >= 2 activates No1 for player 1
+    int8_t multi_arg[8] = {2, 2};
+    h_hid_ShowCtrl0(multi_arg);
+    CHECK(h_hid_GetStyle(&(uint32_t){0}) == STYLE_FULLKEY && buttons_of(0, STYLE_FULLKEY) == DM_BTN_Y, "handheld multiplayer: player 1 on No1 as full-key");
+    CHECK(h_hid_GetStyle(&(uint32_t){1}) == STYLE_FULLKEY && buttons_of(1, STYLE_FULLKEY) == DM_BTN_L, "handheld multiplayer: player 2 on No2 as full-key");
 }
 
 static dm_haptic_state vibration[DM_PLAYERS];
