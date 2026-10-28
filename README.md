@@ -29,6 +29,7 @@ Needs iOS / iPadOS 26 or later on an iPhone 15 Pro or newer (A17 Pro chip or lat
 
 Under each game: the IPA's size, and "60 fps with 1.2.0" where the game runs at 60 fps (30 on the Switch) with that update.
 
+<!-- gallery: written by dm/tools/docs_gallery.py from docs/images/gallery.tsv; change the table, then run it -->
 <table>
 <tr>
 <td align="center" valign="top" width="33%"><img src="docs/images/mario-kart-8-deluxe.jpg" width="256" alt="Mario Kart 8 Deluxe"><br>Mario Kart 8 Deluxe<br><sub>~11.9 GB · no Mii heads</sub></td>
@@ -163,9 +164,20 @@ Under each game: the IPA's size, and "60 fps with 1.2.0" where the game runs at 
 <tr>
 <td align="center" valign="top" width="33%"><img src="docs/images/xenoblade-chronicles-2.jpg" width="256" alt="Xenoblade Chronicles 2"><br>Xenoblade Chronicles 2<br><sub>~17.1 GB</sub></td>
 <td align="center" valign="top" width="33%"><img src="docs/images/xenoblade-chronicles-3.jpg" width="256" alt="Xenoblade Chronicles 3"><br>Xenoblade Chronicles 3<br><sub>~19.2 GB</sub></td>
-<td></td>
+<td align="center" valign="top" width="33%"><img src="docs/images/final-fantasy-crystal-chronicles.jpg" width="256" alt="FINAL FANTASY CRYSTAL CHRONICLES Remastered Edition"><br>FINAL FANTASY CRYSTAL CHRONICLES Remastered Edition</td>
+</tr>
+<tr>
+<td align="center" valign="top" width="33%"><img src="docs/images/return-of-the-obra-dinn.png" width="256" alt="Return of the Obra Dinn"><br><a href="dm/games/010032E00E6E2000/README.md">Return of the Obra Dinn</a><br><sub>~0.9 GB</sub></td>
+<td align="center" valign="top" width="33%"><img src="docs/images/blasphemous-2.png" width="256" alt="Blasphemous 2"><br><a href="dm/games/010040801A4C8000/README.md">Blasphemous 2</a><br><sub>~1.5 GB</sub></td>
+<td align="center" valign="top" width="33%"><img src="docs/images/silver-pines.jpg" width="256" alt="Silver Pines"><br><a href="dm/games/0100D5B026844000/README.md">Silver Pines</a></td>
+</tr>
+<tr>
+<td align="center" valign="top" width="33%"><img src="docs/images/blasphemous.jpg" width="256" alt="Blasphemous"><br><a href="dm/games/0100698009C6E000/README.md">Blasphemous</a><br><sub>~0.9 GB</sub></td>
+<td align="center" valign="top" width="33%"><img src="docs/images/final-fantasy-x-x2-hd-remaster.jpg" width="256" alt="FINAL FANTASY X/X-2 HD Remaster"><br><a href="dm/games/0100BC300CB48000/README.md">FINAL FANTASY X/X-2 HD Remaster</a><br><sub>~26.5 GB</sub></td>
+<td align="center" valign="top" width="33%"><img src="docs/images/mario-rabbids-kingdom-battle.jpg" width="256" alt="Mario + Rabbids Kingdom Battle"><br><a href="dm/games/010067300059A000/README.md">Mario + Rabbids Kingdom Battle</a><br><sub>~5 GB</sub></td>
 </tr>
 </table>
+<!-- end of gallery -->
 
 ## Pack an IPA
 
@@ -201,9 +213,9 @@ Any version works, with or without an update: the script packs the newest versio
 python3 scripts/build_ipa_from_nsp.py ~/Games/MarioWonder -k ~/keys/prod.keys
 ```
 
-The IPA appears in the same folder (here `~/Games/MarioWonder/SMBWMobile.ipa`). The first build takes 30–60 minutes. A later one reuses every step whose inputs did not change, so after a pull that changes only the host it takes about a minute. The small `.idx` file beside the IPA (`.app.key` beside a Mac app) records what was packed; keep it for the next build. You need free disk space of about twice the NSPs' size plus 10 GB. Options such as `-o` (output path) and `--app-name` are listed by `-h`.
+The IPA appears in the same folder (here `~/Games/MarioWonder/SMBWMobile.ipa`). The first build takes 30–60 minutes. A later one reuses every step whose inputs did not change, so after a pull that changes only the host it takes about a minute. The small `.idx` file beside the IPA (`.app.key` beside a Mac app) records what was packed; keep it for the next build. You need free disk space of about twice the NSPs' size plus 10 GB. For a large game, `--romfs separate` leaves the game files out of the IPA and prints the one-time `scripts/push_romfs.sh` command that copies them to the phone, so rebuilds stay small and fast ([Quick reinstalls](docs/development.md#quick-reinstalls)). Options such as `-o` (output path) and `--app-name` are listed by `-h`.
 
-**4. Install** the IPA with your sideloading tool (AltStore, Sideloadly, LiveContainer, …). The app gets the game's name, icon and version (the update's version, for example 1.2.1 for Mario Wonder; the base game's when there is no update). Sign it with the **Increased Memory Limit** capability (`com.apple.developer.kernel.increased-memory-limit`) if your tool can: without it iOS gives the app about 3.4 GB and closes the bigger games (Hyrule Warriors: Age of Calamity and Hades II use more, Breath of the Wild and Cuphead come close); with it a recent iPhone gives about 6 GB.
+**4. Install** the IPA with your sideloading tool (AltStore, Sideloadly, LiveContainer, …). The app gets the game's name, icon and version (the update's version, for example 1.2.1 for Mario Wonder; the base game's when there is no update). Sign it with the **Increased Memory Limit** capability (`com.apple.developer.kernel.increased-memory-limit`) if your tool can: without it iOS gives the app about 3.4 GB and closes the bigger games (Hyrule Warriors: Age of Calamity and Hades II use more, Breath of the Wild and Cuphead come close); with it a recent iPhone gives about 6 GB. The IPA itself carries the request in an ad-hoc signature on its executable, which AltStore-style tools read and keep (`DM_ENTITLEMENTS=` empty leaves it out). A large game's IPA can be too big for iOS to extract: build with `DM_COPY_ROMFS=NO` to leave the game files out and copy them once with `scripts/push_romfs.sh` ([Quick reinstalls](docs/development.md#quick-reinstalls)).
 
 To play on a Mac with Apple silicon instead, `--platform mac-app` packs a Mac app of the game that you open from Finder ([A Mac app](docs/development.md#a-mac-app)). It shows the game's settings in a window before the game starts ([The Mac settings window](docs/settings.md#the-mac-settings-window)).
 
@@ -213,10 +225,14 @@ With an Apple developer account you can instead build and install from Xcode: `-
 
 **Settings.** A screen before the game starts offers what the game supports: frame rate, render scale, docked or handheld mode, game language, the frame-rate counter and rumble. Everything is on one scrollable screen, grouped into **Game**, **Controls** and **Performance**, with menus, sliders and a reset to the settings the game was tested with. Tap **Play** to start; the app remembers your choices. What each setting does: [Settings](docs/settings.md).
 
-**Touch controls.** Tap **2D** / **3D** at the top to switch layouts; the app remembers your choice. Wonder, Engage, Dread, 13 Sentinels, Link's Awakening, Ace Attorney Investigations Collection, Unicorn Overlord, Rhythm Heaven Groove, Octopath Traveler 0, Pokémon Legends: Z-A, Cuphead, Absolum, Brain Memory Training Academy, The Great Ace Attorney Chronicles, STEINS;GATE RE:BOOT, Big Brain Academy: Brain vs. Brain, Patrick's Parabox, Celeste, Raging Loop and Mario vs. Donkey Kong start in 2D, the other games in 3D (STEINS;GATE RE:BOOT's quick save is R3, in the 3D layout). In 3D, the right stick (the camera in most games) is not drawn: swipe on the right third of the screen, starting anywhere off the buttons. In Super Mario Galaxy and Super Mario Galaxy 2, other touches outside the controls move the pointer; in Captain Toad: Treasure Tracker they touch the game's screen (touch blocks, stun enemies), and in Big Brain Academy: Brain vs. Brain too (its menus and activities).
+**Touch controls.** Tap **2D** / **3D** at the top to switch layouts; the app remembers your choice. Wonder, Engage, Dread, 13 Sentinels, Link's Awakening, Ace Attorney Investigations Collection, Unicorn Overlord, Rhythm Heaven Groove, Octopath Traveler 0, Pokémon Legends: Z-A, Cuphead, Absolum, Blasphemous 2, Brain Memory Training Academy, The Great Ace Attorney Chronicles, STEINS;GATE RE:BOOT, Big Brain Academy: Brain vs. Brain, Patrick's Parabox, Celeste, Raging Loop and Mario vs. Donkey Kong start in 2D, the other games in 3D (STEINS;GATE RE:BOOT's quick save is R3, in the 3D layout). In 3D, the right stick (the camera in most games) is not drawn: swipe on the right third of the screen, starting anywhere off the buttons. In Super Mario Galaxy and Super Mario Galaxy 2, other touches outside the controls move the pointer; in Captain Toad: Treasure Tracker they touch the game's screen (touch blocks, stun enemies), and in Big Brain Academy: Brain vs. Brain too (its menus and activities).
 A connected game controller hides the touch controls and keeps every button.
 
 **Rumble.** Game vibration uses the iPhone's haptic engine or a compatible connected controller. Controllers with separate left/right haptic outputs keep those effects separate. The launcher's **Game rumble** and **Rumble strength** settings control it independently of **Touch feedback**. Phone rumble approximates the Switch's effects; physical feel and controller compatibility still need device testing.
+
+**Motion (gyro).** A controller that supplies gyro data through Apple's controller support (DualSense, DualShock 4) drives the game's motion controls, on the Mac and the iPhone: aiming and tilt puzzles in games that read the controller's motion, such as Breath of the Wild with its Motion Controls option on. A controller without one (Backbone One, Razer Kishi and other controllers the phone mounts in) uses the iPhone's own gyro, as a Switch in handheld. Motion follows the controller in docked mode, the default. `DM_PHONE_MOTION=0` in `Documents/env.txt` stops the phone's gyro, `DM_MOTION=0` all motion. If motion misbehaves, pack with `--no-motion` (`MOTION = False` in Spyder) for an app without it; `DM_MOTION=1` in `Documents/env.txt` turns it back on.
+
+Switch Pro Controller gyro on the Mac still needs the HID support being developed in [PR #296](https://github.com/seedds/nxnative/pull/296).
 
 **Shaking.** Shake the iPhone to shake the controller, in games that read its motion: Super Mario Odyssey's motion moves (such as the cap throw on a shake) need it, and Odyssey only takes them in its default docked mode. A light bump does not count; a sharp flick of the phone does.
 
@@ -236,7 +252,7 @@ A connected game controller hides the touch controls and keeps every button.
 
 ## For developers
 
-How it works, the script's options, running games on the Mac and adding a game: [docs/development.md](docs/development.md). Per-game notes: [dm/games](dm/games/README.md#games). In-depth bring-up and debugging notes: [docs/agents](docs/agents/README.md). What a graphical front end can build on: [Front ends](docs/frontends.md).
+How it works, the script's options, running games on the Mac and adding a game: [docs/development.md](docs/development.md). Per-game notes: [dm/games](dm/games/README.md#games). In-depth bring-up and debugging notes: [docs/agents](docs/agents/README.md). What a graphical front end can build on: [Front ends](docs/frontends.md). Reporting a problem or sending a change: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
