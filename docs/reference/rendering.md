@@ -34,6 +34,15 @@ The replay on Metal (`dm/gfx/nvn/nvn_mtl.m`) and the Vulkan and OpenGL layers. E
 - **Note:** Metal makes a swizzled view read-only (usage 0x1), so an image slot gets the same view without the mapping (`img_fit`), and the on-chip read merge leaves a swizzled sample alone.
 - **Found on:** [Super Mario Bros. Wonder](../../dm/games/010015100B514000/README.md) (the font atlas); The Legend of Zelda: Echoes of Wisdom's hearts (GitHub PR #66, the RGB565 red / blue swap).
 
+### A plain texture's initial fill in Metal's channel order
+
+- **Symptom:** RGB565, RGB5A1 or RGB5 textures filled once from their pool sample with red and blue exchanged: smeared, banded rock, the shapes right and the colours wrong.
+- **Cause:** `tex_init_fill` uploads a pool's initial content into a plain Metal texture, which Metal also renders and clears into, so `tex_by_id` reads it without the RGB565 family's red / blue swap ([Texture swizzle through swizzled Metal views](#texture-swizzle-through-swizzled-metal-views)). The upload copied the guest's bits as they are, in the guest's order.
+- **Fix:** the one-time fill (`pkg_upload_` with no dirty stamp) exchanges the 5-bit red and blue fields on the CPU, so the texture holds Metal's order throughout (`rb_packed_shift`, from `nvn_fmt_to_mtl`'s swap). Packaged textures (`NvPkg`) keep the guest's bits and the swapping view; other formats keep the GPU deswizzle.
+- **Note:** `CopyBufferToTexture` into a plain texture also copies the guest's bits unchanged, so an RGB565-family copy may still be exchanged there. Not checked on a game; open.
+- **Check:** `t_view_swizzle` fills RGB565, RGB5A1, RGB5 and BGR565 textures from `CPU_UNCACHED` and `CPU_NO_ACCESS` pools through the real `tex_init_fill`, reads them on the GPU, draws into one texel and reads both again, and checks the guest storage is unchanged: 379 checks, none failed under the Metal debug layer; 36 fail with the exchange taken out.
+- **Found on:** [The Legend of Zelda: Tears of the Kingdom](../../dm/games/0100F2C0115B6000/README.md#rendering) (GitHub issue #183, the Depths' cave walls), found and checked in the game by the issue's reporters (M1 with 1.2.1, M4 with 1.4.3).
+
 ### `nvnTextureCompare` compares the channel mapping
 
 - **Symptom:** dark boxes and cream cloud rectangles behind HUD prompts, a black stamina wheel and a black System menu background (layout captures).
@@ -99,6 +108,14 @@ The replay on Metal (`dm/gfx/nvn/nvn_mtl.m`) and the Vulkan and OpenGL layers. E
 - **Fix:** the zero cube is bound instead of a type mismatch with undefined reads (`tex_fit`). This supported binding fallback is informational (`cube binding fallback`), rather than a red error: it cannot diagnose which branch the shader executes. Other unsupported texture mismatches still report errors.
 - **Found on:** [Pokémon Legends: Z-A](../../dm/games/0100F43008C44000/README.md); [Mario Kart 8 Deluxe](../../dm/games/0100152000022000/README.md) binds a 2D array of fewer than six layers (format 0x44) at slot 10 of two pixel shaders that declare a cube there as a race loads, and it was bound as is; [Echoes of Wisdom](../../dm/games/01008CF01BAAC000/README.md#rendering-and-shaders) exposed the false error for an unused conditional cube input.
 - **Check:** `make -C dm/gfx/tests GAME=<id> check_t_cube_placeholder` uses production `tex_fit` and GPU sampling under Metal API validation. For 2D descriptors and one- and five-layer arrays, an unselected fallback preserves the other cube's blue output, a selected fallback reads zero, and binding alone raises no error; both cube and cube-array arguments are covered.
+
+### A 2D texture in a 3D slot binds the zero 3D texture
+
+- **Symptom:** `[RED] texture type mismatch: shader … declares slot … as Metal type 7, texture ID … is type 2 … bound as is` (or type 3, a 2D array); the reads are undefined.
+- **Cause:** the game leaves a 2D texture bound in a slot its shader samples as a 3D texture, and Metal makes a 3D view only of a 3D texture. Batman: Arkham Knight's shaders sample a volume at world coordinates through separate texture slots that hold 2D textures, mostly half-resolution render targets, from the first frames of New Story on (`553c51835a24a36a`, separate slot 2: a 720x406 RGBA16F target); the pass dump shows the game binding them there, so no bind was lost, and the game does create 3D textures (2x2x2, 32x32x32, 71x40x64). What the Switch's texture unit reads from a 2D texture header through a 3D instruction is not known.
+- **Fix:** as for a cube slot, `tex_fit` binds the zero 3D texture, a defined read, for a 2D texture or 2D array in a 3D slot, and logs the first case (`3D binding fallback`); other mismatches no view bridges are still reported and bound as is.
+- **Found on:** [Batman: Arkham Knight](../../dm/games/0100ACD0163D0000/README.md#files-and-shaders) (four shaders, 3,813 draws in a run to the diner). The same red line is recorded on [FINAL FANTASY RESONANCE](../../dm/games/0100606026F12000/README.md), [ROMANCE OF THE THREE KINGDOMS 8 REMAKE](../../dm/games/0100C2A01A730000/README.md), [Luigi's Mansion 3](../../dm/games/0100DCA0064A6000/README.md) and [Hyrule Warriors: Age of Calamity](../../dm/games/01002B00111A2000/README.md), none of them run with this rule.
+- **Check:** `make -C dm/gfx/tests GAME=<id> check_t_cube_placeholder` also covers a 2D texture and one- and five-layer 2D arrays in a `texture3d` argument: an unselected fallback leaves the real volume's output alone, a selected one reads zero.
 
 ### Integer views for images a shader declares uint or int
 
@@ -173,6 +190,13 @@ The replay on Metal (`dm/gfx/nvn/nvn_mtl.m`) and the Vulkan and OpenGL layers. E
 - **Cause:** a sampler built with `SamplerBuilderSetReductionFilter` (min / max) was averaged by the host. Metal 26 has the same thing (`MTLSamplerDescriptor.reductionMode`), but ignores it with a nearest or no mip filter.
 - **Fix:** reduction samplers filter mips linearly (`samp_by_id`): at the integer LODs reductions are used with, that is the same level.
 - **Found on:** [Pokémon Legends: Z-A](../../dm/games/0100F43008C44000/README.md): its depth pyramid is built with a min-reduction sampler (`SamplerBuilderSetReductionFilter 1`; `151607c7a92386cc` samples the level above at an explicit LOD).
+
+### Sampler LOD bias
+
+- **Symptom:** textures a mip level sharper or blurrier than on the Switch where the game biases its sampler; in the Vulkan layer, a red line `sampler LOD bias … not implemented`.
+- **Cause:** the host kept NVN's `SamplerBuilderSetLodBias` and Vulkan's `mipLodBias` but never gave them to Metal, taking them for something Metal samplers lack. Metal 26 has `MTLSamplerDescriptor.lodBias` (range −16 to 15.99).
+- **Fix:** `samp_by_id` (NVN) and `vkCreateSampler` set it, clamped to that range (Vulkan to the ±15 the device reports as `maxSamplerLodBias`).
+- **Found on:** [Super Mario Galaxy](../../dm/games/010099C022B96000/README.md) (the Vulkan red line). MacNativeGames uses the property for its own MetalFX bias, which pointed to it.
 
 ### Texture fields Metal refuses
 
@@ -352,6 +376,7 @@ The replay on Metal (`dm/gfx/nvn/nvn_mtl.m`) and the Vulkan and OpenGL layers. E
   - [NieR:Automata The End of YoRHa Edition](../../dm/games/010056B015FE8000/README.md): its FXAA (`fd2c47b73f0e7e24`, `filter09.pso`) samples the RG11B10F scene target it renders into through a **separate** texture bind, and `fb_prepare` took only combined slots (`b->reg >= 128` was skipped), so the key had no effect. On the Mac some of its reads came back NaN in red and blue; the bloom spread them into green blobs and the eye adaptation darkened the frame (`DM_NVN_MAGSCAN`: 50,000+ non-finite pixels a frame over the opening's ocean, 0 with the snapshot). Separate texture binds now take the snapshot too.
   - [Captain Toad: Treasure Tracker](../../dm/games/01009BF0072D4000/README.md): agl's post-effect program 987 (`54f58a7cab608766`, the same program as 3D World's `66a71a3081b91b9a` in another build); `DM_NVN_FB_SNAP=all` cleared every frame and named this one shader, now in the profile's `feedback_snap`.
   - [Super Mario Bros. Wonder](../../dm/games/010015100B514000/README.md#rendering): black and green blocks on the Mac (Apple M6; an M1 in [seedds/nxnative#377](https://github.com/seedds/nxnative/issues/377)) from its two feedback draws `a7e5c6fd501cf21f` and `22a61cb1ec732aef` on the RG11B10F scene, the same keys in v0 and 1.2.1, which had shown nothing on the iPhone. Screenshots with a flicker detector: v0's opening course 6 of 160 frames with blocks before, 0 of 150 with both in `feedback_snap`; 1.2.1's Badge House dialogue 23 of 158 before, 0 of 158 after.
+  - [Paper Mario: The Origami King](../../dm/games/0100A3900C3E2000/README.md#rendering): magenta 16×16 blocks on the Mac (Apple M6) from its anti-aliasing pass `8dc20835c07cd7ff` (`shaders/aa.bfsha`) on the 1920×1080 RGB10A2 scene, the only shader `DM_NVN_FB_SNAP=all` snapshotted; about one block a frame at Peach's castle before, none with it in `feedback_snap`.
 - **Note:** doing it for every shader is too expensive: Breath of the Wild has over a thousand draws a frame that sample the G-buffer of their own pass (Mac frame time 16.6 → 36.6 ms), and Mario Wonder's submit time went from 1.4 to 4.0 ms. Breath of the Wild's feedback draws (`4d3d5a4408c2e8d9`, `753d0169ae3ce4f0` and others on its 1600×900 G-buffer) had shown no blocks on the iPhone; if they do, `DM_NVN_MAGSCAN` names the pass and the shader goes into that profile's `feedback_snap`. `DM_NVN_FB_SNAP=all` snapshots every such draw; with a screenshot detector it shows whether the blocks come from such a draw, and a pass dump (`N … same-pass feedback sampling` lines after the draw's `K` keys) names the shaders.
 
 ### Lower-left window origin
@@ -377,6 +402,13 @@ The replay on Metal (`dm/gfx/nvn/nvn_mtl.m`) and the Vulkan and OpenGL layers. E
 - **Fix:** `present_now` commits the residency set after resolving the presented texture (`res_commit`, free when nothing changed), for every game.
 - **Found on:** [Super Smash Bros. Ultimate](../../dm/games/01006A800016E000/README.md) (13.0.5, `DM_WINDOW=1`).
 - **Check:** Breath of the Wild windowed with the change: its title, 60 fps, no GPU error.
+
+### A CPU-written window texture resolved where the present is queued
+
+- **Symptom:** an abort at the first present: `[RED] upload batches belong to the submit thread only: up_begin called on thread 'nvn-present-link'`, with `pkg_upload`, `tex_mtl` and `present_now` in the backtrace.
+- **Cause:** the game fills its window textures with `nvnTextureWriteTexels` at boot and presents one before drawing into it. A texture whose content comes from its storage (CPU-written, packaged) is uploaded when it is first resolved, in an upload batch only the submit thread may open, and the first resolution of this one was `present_now` on the present thread.
+- **Fix:** `present_enqueue`, on the thread that queues the present, resolves a storage texture (`tex_from_storage`) when that is the submit thread and commits the upload batch (`up_flush`), so the display command buffer comes after the upload on the queue and the present thread finds the texture uploaded. For every game; a texture that is not taken from its storage is resolved on the present thread as before.
+- **Found on:** [Bastion](../../dm/games/010038600B27E000/README.md) (1.0.0, SDK 5.4.0: both 1920x1080 window textures written by `main+0x9374`).
 
 ### The present upscales through MetalFX
 
@@ -575,6 +607,13 @@ The replay on Metal (`dm/gfx/nvn/nvn_mtl.m`) and the Vulkan and OpenGL layers. E
 - **Found on:** [Monster Hunter Rise](../../dm/games/0100B04011742000/README.md).
 - **Note:** the replay used to commit its work and wait for the GPU before the first such draw after each GPU write, then read the count on the CPU (`mdi_wait`, now only for quads, fans and 8-bit indices). In Kamura Village that wait held the submitting thread 14 of its 20 ms a frame on an iPhone (36–54 fps). On the Mac the same scene's submit took 20 ms of wall time for 6.1 ms of work, and now 5.1 ms, all of it work.
 
+### `nvnCommandBufferDrawTexture`
+
+- **Symptom:** a black screen while the frame loop runs at full rate, with `[RED] NVN unimplemented function called: nvnCommandBufferDrawTexture`; once drawn, the picture alternates frame by frame between the right image and another texture's (a solid colour, a still image).
+- **Cause:** the call draws a texture region (texels, through the handle's sampler) into the destination region of the bound colour targets (pixels) without a shader of the game's, and the host had no implementation. Its handle holds IDs of the texture and sampler pools the command buffer bound, as a bind's does: read as IDs of the first pool, a game that draws from a second pool got that pool's textures at the same IDs.
+- **Fix:** recorded as `OP_DRAW_TEX` with the handle moved to the bound pools, as `bind_handles` does (`hle_nvn.c`), and replayed by `draw_tex` (`nvn_mtl.m`): its own render pass per bound colour target after the pass in progress, the pending clears landed first, with the scissor and channel mask; the replay's analyses (pass fusion, deferral, clear hoisting, the store lookahead) treat it as a texture copy. Region coordinates map to the targets' rows directly in either window origin, since the host keeps the Switch's memory layout. Blending is not applied (`[RED] DrawTexture with blending on`), and integer, depth and compressed targets are not drawn.
+- **Found on:** [Streets of Rage 4](../../dm/games/0100EC9010258000/README.md): its scene target gets the movie frame this way (the intro, the title's flames), from movie textures registered at IDs 256 and 257 of a second texture pool.
+
 ### Rasterizer discard preserves vertex storage writes
 
 - **Symptom:** the HUD and sky render but the battle's characters and terrain are absent; the replay logs `draw skipped: rasterizer discard` between model draws.
@@ -671,10 +710,11 @@ The replay on Metal (`dm/gfx/nvn/nvn_mtl.m`) and the Vulkan and OpenGL layers. E
 
 ### An unbound uniform slot reads the zero bank
 
-- **Symptom:** `stage 0 cb5 has no uniform buffer bound`.
-- **Cause:** the argument buffer kept a null pointer for the unbound slot.
+- **Symptom:** `stage 0 cb5 has no uniform buffer bound` (or another stage and slot, such as `stage 0 cb0`), once per run.
+- **Cause:** the argument buffer kept a null pointer for the unbound slot. The game draws with nothing bound there; the host misses no bind. What the Switch reads from an unbound slot is not known.
 - **Fix:** the slot now reads the all-zero bank, as an unbound texture slot reads the zero texture.
-- **Found on:** [Paper Mario: The Thousand-Year Door](../../dm/games/0100ECD018EBE000/README.md) (at the title).
+- **Found on:** [Paper Mario: The Thousand-Year Door](../../dm/games/0100ECD018EBE000/README.md) (at the title); [Batman: Arkham Knight](../../dm/games/0100ACD0163D0000/README.md#files-and-shaders) (`stage 0 cb0`, at boot: the first command buffer draws before the game has bound any uniform buffer).
+- **Check:** a pass dump of the frame (`DM_NVN_PASSDUMP=<frame>`, frame 0 for the boot) shows the draw (`j` line) and its stage's `K` line with no `B … cb` line, and the frame's `[nvn]` call counts show whether the game called `CommandBufferBindUniformBuffer` at all.
 
 ### Compute dispatches share the copy encoder
 
@@ -836,10 +876,10 @@ The Vulkan layer (`dm/gfx/vk/hle_vk.m`) was written for Hades; Super Mario Galax
 - Timestamps are their submit's completion time; occlusion queries count into a per-submit visibility buffer, copied to the pool when the submit completes.
 - **Found on:** [Super Mario Galaxy](../../dm/games/010099C022B96000/README.md): two timestamp pools and a 3,072-entry occlusion pool.
 
-### Not translated in the Vulkan layer: geometry shaders and LOD bias
+### Not translated in the Vulkan layer: geometry shaders
 
-- **Symptom:** GX points and lines drawn as one-pixel points and lines; a red line for the sampler LOD bias.
-- **Cause:** two geometry shaders (GX points and lines expanded to quads) are not translated (Metal has no geometry stage); GX's sampler LOD bias has no Metal sampler equivalent.
+- **Symptom:** GX points and lines drawn as one-pixel points and lines.
+- **Cause:** two geometry shaders (GX points and lines expanded to quads) are not translated (Metal has no geometry stage).
 - **Found on:** [Super Mario Galaxy](../../dm/games/010099C022B96000/README.md).
 
 ## OpenGL layer
