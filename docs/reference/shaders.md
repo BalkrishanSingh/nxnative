@@ -4,6 +4,13 @@ Finding, keying and translating shaders (`dm/gfx/tools/shader_split.py`, `dmsh_b
 
 ## Containers by engine
 
+### Sumo Ninty_NX shaders and MuxFDMR streams
+
+- **Symptom:** the split finds no shaders in `main` or RomFS, while reporting control sections in `main` with no code area. The game has `.sp4` resources and loose `.nvnbin` files rather than BNSH archives or whole GLSLC outputs.
+- **Cause:** Sumo's `Ninty_NX` descriptors store control/code offsets relative to their container, whose start is recovered from the descriptor's own relative offset. The code is not necessarily adjacent to its control section. `MuxFDMR` version 2 resources wrap these containers in one or two zlib streams; their header holds both the stored and decoded lengths. Loose `NVNsh` version 1 records instead name one stage and its control/code ranges directly.
+- **Fix:** `shader_split.py` reads the bounded descriptor ranges and loose records, checks each stage through the existing control/code validation, and scans decoded Mux members recursively. It validates container versions, non-overlapping ranges, complete zlib frames and exact decoded lengths before accepting their shaders. As with Needle, a magic whose container does not fit the data is a literal in executable code and is passed over; the split reads `main` whole, where a stop would end it. Detection follows the format bytes, not a filename or title ID. Original control/code bytes and shader keys are preserved; single-stage vertex programs use the existing pixel-input cover. `test_sumo.py` covers embedded containers, loose records, compressed members, malformed input and file-scanner integration.
+- **Found on:** [Team Sonic Racing](../../dm/games/010092B0091D0000/README.md) 1.0.3: 337 `.sp4` resources contain 28,258 descriptors, `main` holds 586, and two `.nvnbin` files hold four stages. The split finds 4,516 unique shaders (2,116 vertex, 2,399 pixel, one compute), against zero before.
+
 ### Phyre NVN effects in Virtuos VBF archives
 
 - **Symptom:** the shader split finds no game programs despite loose `.fx.phyre` effects and multi-GB `.vbf` archives.
@@ -108,6 +115,13 @@ Finding, keying and translating shaders (`dm/gfx/tools/shader_split.py`, `dmsh_b
 - **Cause:** Portal keeps all its files in `game.zip` (41,416 members, Deflate or stored). The Source engine's D3D9 layer (`materialsystem.nro`) links each vertex and pixel shader combination into one program; the programs of the game's precache list (`portal/glbaseshaders.cfg`, 219 entries) ship compiled as `nxcontent/nvsb/<hash>.nvsb` (`NVSB`, version 0x65, the file's length at +8, a 0x60-byte header, then one GLSLC output holding a vertex and a pixel shader). A deflated member hides the GLSLC magic from the loose-file scan. The game compiles the rest with `glslcCompile` (its movie shaders and its own blits: 10 outputs within 30 s of boot), and the capture rule looked only for `main` holding GLSL sources and importing `glslcCompile`.
 - **Fix:** `shader_split.py` reads zip archives member by member in parallel ranges (`zip_jobs` / `zip_shaders`; `zipfile`), each member scanned like a loose file, whole GLSLC outputs included. `profile_guess.py` `shader_sources` asks for the run-time GLSLC capture when an NRO the game loads imports `glslcCompile` and a subsdk defines it (`glslc_capture`). Portal's map: 242 keys from the `.nvsb` files and 13 from the capture, 229 vertex and pixel pairs.
 - **Found on:** [Portal](../../dm/games/01007BB017812000/README.md). No other profile's RomFS has a zip archive holding shaders.
+
+### GLSLC outputs in Criterion's Bundle 2 resources
+
+- **Symptom:** an NVN game's split finds a few dozen shaders (`main`'s and a loose file's) and the screen stays black but for the loading indicator, with `[RED] shader … is not in the shader map` and `program has no vertex shader`; the RomFS holds `.BNDL` files that start with `bnd2`.
+- **Cause:** Criterion's Bundle 2 (Burnout Paradise's format; version 3 here) keeps each resource zlib-compressed: the header gives the entry count and table offset (+0x10, +0x14), four block data offsets (+0x18) and the flags (+0x28, bit 0: compressed); a 0x50-byte entry gives the resource ID, four sizes on disk (+0x20, alignment in the top nibble), four offsets (+0x30) and the type (+0x44). Need for Speed: Hot Pursuit Remastered's `SHADERS.BNDL` holds 2,112 whole GLSLC outputs in block 1 of its type 0x8 resources, none of which a raw scan of the file can see.
+- **Fix:** `shader_split.py` reads a file that starts with `bnd2` resource by resource (`bnd2_resources`) and scans each inflated block for GLSLC outputs (`bnd2_shaders`), by the outputs' magic rather than the resource type, whose numbering is per game. Hot Pursuit Remastered: 89 → 2,154 shaders, the 10 its first frames asked for among them.
+- **Found on:** [Need for Speed: Hot Pursuit Remastered](../../dm/games/010029B0118E8000/README.md).
 
 ### G2S containers in KTGL RDB archives
 
@@ -444,6 +458,20 @@ Finding, keying and translating shaders (`dm/gfx/tools/shader_split.py`, `dmsh_b
 - **Cause:** a vertex shader may write only part of an output (Link's Awakening writes a world position's x, y and z) while the pixel shader reads the rest (it divides by w). On the hardware the unwritten components read as (0, 0, 0, 1); Ryujinx gets the same by initializing the components the next stage reads when it links stages. The translator's MSL starts every vertex shader with `main0_out out = {};`, all zeros, so w was 0, and a fragment shader dividing by it got infinite compare values.
 - **Fix:** general: `dmsh_build.py` (`vs_init`) sets every `float4` output to (0, 0, 0, 1) right after it, and the translated body overwrites what it writes.
 - **Found on:** [The Legend of Zelda: Link's Awakening](../../dm/games/01006BB00C6F0000/README.md) (Mac and iPhone): 12,281 of 18,410 vertex outputs never write w. The sun's shadow map (2048×2048, depth 32-bit float) was correct; the surface shaders compute the lookup from a world position the vertex shader passes in `locn24`, divided by its w. Found with `DM_NVN_TEXRAW` on the shadow map, the light matrices from `DM_NVN_CBDUMP`, and a hand-edited copy of one surface shader that wrote the compare value and the stored depth as its colour. Compared with forcing the compare to pass (`compareFunction` always): the same brightness, plus shadows from the fences, the house and the trees.
+
+### Early fragment tests from the control section
+
+- **Symptom:** rows of dark dots along contour lines of alpha-tested surfaces drawn after a depth pre-pass (Tears of the Kingdom: the stone lattice in front of the Great Sky Island start, as reported by MacNativeGames ae8f4f4; not reproduced here).
+- **Cause:** byte +0x718 of a pixel shader's NVN control section is its early fragment tests flag: the NVN driver's getter is `ldrb w0, [x8, #0x718]` in the `sdk` of all 21 games on hand, and Ryujinx receives it as the 3D engine's EarlyZForce. The translator always passed `earlyZForce` false. Without the attribute, Metal tests depth after a fragment shader that writes memory. In the lattice's G-buffer pass (EQUAL, no depth write, after a LESS pre-pass) that late depth differed by an ulp from the pre-pass along contour lines, the test failed there and the G-buffer kept its clear value.
+- **Fix:** general: `dmsh_build.py` (`early_fragment_tests`) sets `early_fragment_tests` in the translation job of every pixel shader whose control byte +0x718 is set. `dmsh_xlate` passes it to Ryujinx as `earlyZForce`, and the MSL entry point is declared `[[ early_fragment_tests ]]`. A shader whose SPH writes depth (word 19 bit 1) is left as it is, since a test made early would not use the depth it computes.
+- **Found on:** [Tears of the Kingdom](../../dm/games/0100F2C0115B6000/README.md#found-on-this-game): 1,677 of its pixel shaders set the flag, and none of them writes depth. Rebuilding the chain changed exactly those 1,677 shaders' MSL, by the attribute alone. Elsewhere the attribute alone changed 699 of Wonder's 16,268 shaders and 51 of Scarlet's 30,142. Breath of the Wild and ANIMAL WELL set the flag in no shader.
+- **Check:** `dm/gfx/tests/test_early_fragment_tests.py`.
+
+### Dead-code removal dropped the inputs of atomics
+
+- **Cause:** Ryujinx's `Optimizer.RemoveNode` removes a dead node, then follows each source whose last use went away into the node that produced it. It did so even when that producer has side effects, such as an atomic or a call whose result is unused. Such a producer stays in the block, but its sources lost their uses, so the next dead-code pass deleted the chain that feeds it, and the atomic read undefined values.
+- **Fix:** general: `RemoveNode` follows only into producers without side effects (`HasSideEffects`). This follows MacNativeGames' translator patch 0002.
+- **Found on:** no game on hand so far. Rebuilding the chain changed no shader for this reason in Tears of the Kingdom, Breath of the Wild, Wonder, Scarlet or ANIMAL WELL (94,717 shaders); every MSL change was the early fragment tests attribute.
 
 ### Position invariance across shaders
 
@@ -908,6 +936,20 @@ Finding, keying and translating shaders (`dm/gfx/tools/shader_split.py`, `dmsh_b
 - **Fix:** every SDK's driver runs the code of the GLSLC in the same SDK, so the host now reports at least the version the game's own `glslcGetVersion` returns (`hle_glslc.c` `dm_glslc_gpu_code`, `hle_nvn.c`). The host also advertises the translator's supported range for precompiled shaders ([Newest GPU code version reported by the driver](nvn-objects.md#newest-gpu-code-version-reported-by-the-driver)).
 - **Found on:** [Catherine: Full Body](../../dm/games/0100BF00112C0000/README.md) (SDK 8.2.1, Atlus's GFD engine, CRI middleware; one boot).
 
+### GLSL ES 1.00 sources without a `#version` line
+
+- **Symptom:** `gl_shaders.py` failed on the captured sources: `ES shaders for SPIR-V require version 310 or higher`.
+- **Cause:** GameMaker's runner writes each shader variant as **GLSL ES 1.00 with the version statement left out** (`attribute`, `varying`, `texture2D`, `gl_FragColor`, `precision mediump float;`), and uses `sample` as a variable name, a reserved word since ES 3.00.
+- **Fix:** `gl_shaders.py`'s `es100()` pass, run when the source has no `#version` line or says `#version 100` (that line is dropped): drop `precision <p> <t>;` lines (the pattern has to accept `\r`, the captured files mix CRLF and LF), strip `lowp`/`mediump`/`highp` (GameMaker has `#define LOWPREC lowp`, so a macro would otherwise expand to nothing useful), rename `attribute`→`in`, `varying`→`out` (vertex) / `in` (fragment), declare `out vec4 gm_FragColor;` and rename `gl_FragColor`, rename `sample`→`gm_sample`, then prepend `#version 310 es` with `precision highp float; precision highp int;`. Texture functions stay with the existing `fixups()` so the rename happens after `glslangValidator -E` and a macro cannot hide one.
+- **Found on:** [Well Dweller](../../dm/games/0100217023F6C000/README.md) (93 run-time shaders; see its [`gl_capture.tsv`](../../dm/games/0100217023F6C000/gl_capture.tsv)).
+
+### Struct uniforms become member rows
+
+- **Symptom:** `uniform LightEnv { … };` failed with `uniform u_LightEnv: type LightEnv (structs are not implemented)`, so every program that used one was missing from the library.
+- **Cause:** GameMaker declares several uniform blocks as struct uniforms, and the layer's `glGetUniformLocation` compares the name the game asks for (minus a `[n]` suffix) against the table's rows, whose name field is 48 bytes — the game asks for `u_LightEnv.m_dirLights_dir` and similar dotted member names.
+- **Fix:** `gl_shaders.py` gained `uni_members()`, which walks a struct type's members and emits one row per member with the dotted name (`u:u_LightEnv.m_dirLights_dir[0]`), adding each member's offset to its parent's (the reflection gives a nested member's offset relative to its parent); arrays of structs return an error.
+- **Found on:** [Well Dweller](../../dm/games/0100217023F6C000/README.md), whose lighting programs were the missing ones.
+
 ## Pipelines and caches
 
 ### A compile that does not return stalls every flush and draw
@@ -972,6 +1014,14 @@ Finding, keying and translating shaders (`dm/gfx/tools/shader_split.py`, `dmsh_b
 - **Fix:** cache and restore the Mac MSL and reflection for every target; require and copy metallibs only for selected targets. A cache entry without its analysis source is a miss. Clear `IOSOUT` when iOS is not selected and restrict prefill validation to selected targets. The NSP script writes only the requested target's reuse key.
 - **Found on:** [Celeste](../../dm/games/01002B30028F6000/README.md#shaders), while reviewing PR #275 (resolved).
 - **Check:** real Metal output and cache comparisons are recorded in Celeste's shader note above. `test_shader_toolchain_cache.py` covers geometry analysis files, incomplete entries and prefill selection; `test_nsp_mac.py` checks target-specific reuse keys.
+
+### An iOS build after a Mac-only build kept no Mac libraries
+
+- **Symptom:** after `scripts/build_ipa_from_nsp.py <NSP folder> --platform mac`, a plain (iOS) run of the script on the same folder succeeds, but the Mac run command the first build printed then logs hundreds of `[RED] failed to load shader <key>_b: cannot open …/shader/cache/b-<chain>/<key>_b.metallib` lines, until `--platform mac` is run again.
+- **Cause:** both builds write the Mac sources and reflection into `<id>_build/shader/cache/b-<chain>/`, which also holds the Mac libraries. A full `dmsh_build.py` run first removes every `<key>_b*` output there, so that a key that left the map or a shader that no longer builds keeps no old library, and then restores or compiles only the targets in `DMSH_TARGETS`. Since target selection ([Target selection keeps the shader analysis files in the cache](#target-selection-keeps-the-shader-analysis-files-in-the-cache)) the NSP script asked an iOS build for `ios` alone, so the Mac `.metallib` files were removed and only their `.metal` and `.json` came back.
+- **Fix:** the NSP script (`build_shaders`) asks an iOS build for `mac,ios` when the folder holds the current chain's Mac libraries, and then writes both reuse keys, so a later `--platform mac` run is reused. The Mac libraries are rebuilt, not kept as they were, so none is stale: the Metal compile cache gives back every one whose MSL was compiled before, and only a changed MSL is compiled. The first such build of a folder may translate again, because the per-shader cache entries an iOS-only build left hold no Mac library. A folder without Mac libraries (only ever packed as an IPA) still compiles only the iPhone's. `dmsh_build.py`'s rule, that a full build leaves only what it built, is unchanged; it is part of the chain version, so the fix stays in its caller.
+- **Found on:** [Team Sonic Racing](../../dm/games/010092B0091D0000/README.md#found-on-this-game) (resolved).
+- **Check:** `test_nsp_mac.py` (`test_ios_after_mac_keeps_mac_libraries`, `test_ios_after_mac_of_another_chain`).
 
 ### Function constants specialized at load
 

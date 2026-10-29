@@ -22,6 +22,7 @@ Every piece of code that runs for one game and not the others: the rewriter's pa
 | [Mario + Rabbids Kingdom Battle](#mario--rabbids-kingdom-battle) | 6 | 0 | 0 | 0 | 0 | yes |
 | [Mario + Rabbids® Sparks of Hope](#mario--rabbids-sparks-of-hope) | 7 | 0 | 0 | 0 | 0 | yes |
 | [Monster Hunter Rise](#monster-hunter-rise) | 0 | 0 | 0 | 0 | 1 |  |
+| [Need For Speed™ Hot Pursuit Remastered](#need-for-speed-hot-pursuit-remastered) | 1 | 0 | 0 | 0 | 5 | yes |
 | [NieR:Automata The End of YoRHa Edition (010056B015FE8000)](#nierautomata-the-end-of-yorha-edition-010056b015fe8000) | 8 | 0 | 0 | 0 | 1 | yes |
 | [NieR:Automata The End of YoRHa Edition (0100B8E016F76000)](#nierautomata-the-end-of-yorha-edition-0100b8e016f76000) | 8 | 0 | 0 | 0 | 1 | yes |
 | [OCTOPATH TRAVELER 0](#octopath-traveler-0) | 1 | 0 | 0 | 0 | 3 | yes |
@@ -37,7 +38,7 @@ Every piece of code that runs for one game and not the others: the rewriter's pa
 | [Taiko Risshiden V DX](#taiko-risshiden-v-dx) | 1 | 0 | 0 | 2 | 0 | yes |
 | [The Legend of Zelda: Breath of the Wild](#the-legend-of-zelda-breath-of-the-wild) | 7 | 0 | 5 | 0 | 0 | yes |
 | [The Legend of Zelda: Link's Awakening](#the-legend-of-zelda-links-awakening) | 1 | 0 | 0 | 0 | 0 | yes |
-| [The Legend of Zelda: Tears of the Kingdom](#the-legend-of-zelda-tears-of-the-kingdom) | 0 | 0 | 11 | 0 | 0 | yes |
+| [The Legend of Zelda: Tears of the Kingdom](#the-legend-of-zelda-tears-of-the-kingdom) | 0 | 0 | 9 | 0 | 0 | yes |
 | [Xenoblade Chronicles 3](#xenoblade-chronicles-3) | 6 | 0 | 0 | 0 | 0 | yes |
 
 ## Games
@@ -203,8 +204,8 @@ Every piece of code that runs for one game and not the others: the rewriter's pa
 - **1.2.0 `main`** `f7ec03e4…` ([patches.py:9](../../dm/games/0100A9D01C446000/patches.py#L9))
   - cut `+0x32758dc`: GCreateMalloc: bl 0x291714 (FMallocBinned3 constructor, 37 GB of address space) → nop; the host allocator's vtable is put in at the gate after it (hle_uemalloc.c)
   - gate 21 at `+0x32758e4`: GCreateMalloc: the allocator object is in x19, before it is used: the host puts its vtable in; orig mov x0, x19
-  - host [hle_fpslock.c:41](../../dm/host/hle_fpslock.c#L41): engine frame limit set to fps_target: Unreal t.MaxFPS
-  - host [hle_fpslock.c:42](../../dm/host/hle_fpslock.c#L42): engine frame limit set to fps_target: Unreal rhi.SyncInterval
+  - host [hle_fpslock.c:43](../../dm/host/hle_fpslock.c#L43): engine frame limit set to fps_target: Unreal t.MaxFPS
+  - host [hle_fpslock.c:44](../../dm/host/hle_fpslock.c#L44): engine frame limit set to fps_target: Unreal rhi.SyncInterval
   - host [hle_uemalloc.c:42](../../dm/host/hle_uemalloc.c#L42): Unreal's allocator on a host malloc zone
 
 ### DRAGON QUEST XI S: Echoes of an Elusive Age – Definitive Edition
@@ -212,8 +213,8 @@ Every piece of code that runs for one game and not the others: the rewriter's pa
 [DRAGON QUEST XI S: Echoes of an Elusive Age – Definitive Edition](../../dm/games/01006C300E9F0000/README.md), `01006C300E9F0000`.
 
 - **1.0.4 `main`** `1719aabf…`
-  - host [hle_fpslock.c:36](../../dm/host/hle_fpslock.c#L36): engine frame limit set to fps_target: Unreal t.MaxFPS
-  - host [hle_fpslock.c:37](../../dm/host/hle_fpslock.c#L37): engine frame limit set to fps_target: Unreal nvn.SyncInterval
+  - host [hle_fpslock.c:38](../../dm/host/hle_fpslock.c#L38): engine frame limit set to fps_target: Unreal t.MaxFPS
+  - host [hle_fpslock.c:39](../../dm/host/hle_fpslock.c#L39): engine frame limit set to fps_target: Unreal nvn.SyncInterval
 
 ### FINAL FANTASY CRYSTAL CHRONICLES Remastered Edition
 
@@ -239,8 +240,8 @@ Every piece of code that runs for one game and not the others: the rewriter's pa
 
 - **1.0.1 `main`** `84e182f7…` ([patches.py:9](../../dm/games/0100606026F12000/patches.py#L9))
   - cut `+0x137f0`: nninitStartup: bl 0xae770 (FMallocBinned3 constructor, 38 GB of address space) → nop; the host allocator is in the object already (hle_uemalloc.c)
-  - host [hle_fpslock.c:45](../../dm/host/hle_fpslock.c#L45): engine frame limit set to fps_target: Unreal t.MaxFPS
-  - host [hle_fpslock.c:46](../../dm/host/hle_fpslock.c#L46): engine frame limit set to fps_target: Unreal rhi.SyncInterval
+  - host [hle_fpslock.c:47](../../dm/host/hle_fpslock.c#L47): engine frame limit set to fps_target: Unreal t.MaxFPS
+  - host [hle_fpslock.c:48](../../dm/host/hle_fpslock.c#L48): engine frame limit set to fps_target: Unreal rhi.SyncInterval
   - host [hle_uemalloc.c:53](../../dm/host/hle_uemalloc.c#L53): Unreal's allocator on a host malloc zone
 
 ### FINAL FANTASY RESONANCE (Asian release)
@@ -251,7 +252,7 @@ Every piece of code that runs for one game and not the others: the rewriter's pa
 
 - **1.0.1 `main`** `b7f965b9…` ([patches.py:7](../../dm/games/0100B8A026F14000/patches.py#L7))
   - cut `+0x137f0`: nninitStartup: bl 0xae770 (FMallocBinned3 constructor, 38 GB of address space) → nop; the host allocator is in the object already (hle_uemalloc.c)
-  - host [hle_fpslock.c:48](../../dm/host/hle_fpslock.c#L48): engine frame limit set to fps_target: Unreal rhi.SyncInterval
+  - host [hle_fpslock.c:50](../../dm/host/hle_fpslock.c#L50): engine frame limit set to fps_target: Unreal rhi.SyncInterval
   - host [hle_uemalloc.c:55](../../dm/host/hle_uemalloc.c#L55): Unreal's allocator on a host malloc zone
 
 ### FINAL FANTASY TACTICS - The Ivalice Chronicles
@@ -309,7 +310,7 @@ Every piece of code that runs for one game and not the others: the rewriter's pa
 [Luigi's Mansion 3](../../dm/games/0100DCA0064A6000/README.md), `0100DCA0064A6000`.
 
 - **1.4.0 `main`** `79e5950f…`
-  - host [hle_fpslock.c:62](../../dm/host/hle_fpslock.c#L62): engine frame limit set to fps_target: NLG frame limiter target
+  - host [hle_fpslock.c:64](../../dm/host/hle_fpslock.c#L64): engine frame limit set to fps_target: NLG frame limiter target
 
 ### Mario + Rabbids Kingdom Battle
 
@@ -345,7 +346,21 @@ Every piece of code that runs for one game and not the others: the rewriter's pa
 [Monster Hunter Rise](../../dm/games/0100B04011742000/README.md), `0100B04011742000`.
 
 - **16.0.2 `main`** `c9a3dd77…`
-  - host [hle_fpslock.c:25](../../dm/host/hle_fpslock.c#L25): engine frame limit set to fps_target: RE Engine frame limit
+  - host [hle_fpslock.c:27](../../dm/host/hle_fpslock.c#L27): engine frame limit set to fps_target: RE Engine frame limit
+
+### Need For Speed™ Hot Pursuit Remastered
+
+[Need For Speed™ Hot Pursuit Remastered](../../dm/games/010029B0118E8000/README.md), `010029B0118E8000`, [patches.py](../../dm/games/010029B0118E8000/patches.py).
+
+**Generalize?** No: the engine's own spin limiter at a fixed address of this build
+
+- **1.0.3 `main`** `799d1061…` ([patches.py:7](../../dm/games/010029B0118E8000/patches.py#L7))
+  - cut `+0x4835a4`: frame limiter spin: b.gt main+0x483588 → nop (the host paces the frames)
+  - host [hle_fpslock.c:69](../../dm/host/hle_fpslock.c#L69): engine frame limit set to fps_target: Criterion 60 fps mode
+  - host [hle_fpslock.c:70](../../dm/host/hle_fpslock.c#L70): engine frame limit set to fps_target: Criterion frame ticks
+  - host [hle_fpslock.c:71](../../dm/host/hle_fpslock.c#L71): engine frame limit set to fps_target: Criterion frame ticks / 10
+  - host [hle_fpslock.c:72](../../dm/host/hle_fpslock.c#L72): engine frame limit set to fps_target: Criterion 2D game step
+  - host [hle_fpslock.c:73](../../dm/host/hle_fpslock.c#L73): engine frame limit set to fps_target: Criterion 3D game step
 
 ### NieR:Automata The End of YoRHa Edition (010056B015FE8000)
 
@@ -363,7 +378,7 @@ Every piece of code that runs for one game and not the others: the rewriter's pa
   - cut `+0x9bf4d4`: dynamic resolution: optimal frame cost 32.01 -> 16.005 ms at 60 fps (second load)
   - cut `+0x9bf4f8`: dynamic resolution: good frame cost 30 -> 15 ms at 60 fps
   - launcher capabilities: DYNAMIC_RESOLUTION
-  - host [hle_fpslock.c:78](../../dm/host/hle_fpslock.c#L78): frame interval and dynamic-resolution floor
+  - host [hle_fpslock.c:89](../../dm/host/hle_fpslock.c#L89): frame interval and dynamic-resolution floor
 
 ### NieR:Automata The End of YoRHa Edition (0100B8E016F76000)
 
@@ -381,7 +396,7 @@ Every piece of code that runs for one game and not the others: the rewriter's pa
   - cut `+0x9c08e8`: dynamic resolution lower bound follows the selected preset
   - cut `+0x9c08f4`: dynamic resolution lower bound follows the selected preset
   - launcher capabilities: DYNAMIC_RESOLUTION
-  - host [hle_fpslock.c:79](../../dm/host/hle_fpslock.c#L79): frame interval and dynamic-resolution floor
+  - host [hle_fpslock.c:90](../../dm/host/hle_fpslock.c#L90): frame interval and dynamic-resolution floor
 
 ### OCTOPATH TRAVELER 0
 
@@ -391,8 +406,8 @@ Every piece of code that runs for one game and not the others: the rewriter's pa
 
 - **1.0.5 `main`** `9fe60a21…` ([patches.py:9](../../dm/games/01005270232F2000/patches.py#L9))
   - cut `+0x12e40`: nninitStartup: bl 0x9f480 (FMallocBinned3 constructor, 37 GB of address space) → nop; the host allocator is in the object already (hle_uemalloc.c)
-  - host [hle_fpslock.c:31](../../dm/host/hle_fpslock.c#L31): engine frame limit set to fps_target: Unreal t.MaxFPS
-  - host [hle_fpslock.c:32](../../dm/host/hle_fpslock.c#L32): engine frame limit set to fps_target: Unreal rhi.SyncInterval
+  - host [hle_fpslock.c:33](../../dm/host/hle_fpslock.c#L33): engine frame limit set to fps_target: Unreal t.MaxFPS
+  - host [hle_fpslock.c:34](../../dm/host/hle_fpslock.c#L34): engine frame limit set to fps_target: Unreal rhi.SyncInterval
   - host [hle_uemalloc.c:40](../../dm/host/hle_uemalloc.c#L40): Unreal's allocator on a host malloc zone
 
 ### OCTOPATH TRAVELER II
@@ -404,8 +419,8 @@ Every piece of code that runs for one game and not the others: the rewriter's pa
 - **1.1.1 `main`** `0d964901…` ([patches.py:9](../../dm/games/0100A3501946E000/patches.py#L9))
   - cut `+0xbecc08`: GCreateMalloc: bl 0xc4d778 (FMallocBinned3 constructor) → nop; the host allocator's vtable is put in at the gate after it (hle_uemalloc.c)
   - gate 21 at `+0xbecc0c`: GCreateMalloc: the allocator object is in x19, before it is used: the host puts its vtable in; orig mov x0, x19
-  - host [hle_fpslock.c:52](../../dm/host/hle_fpslock.c#L52): engine frame limit set to fps_target: Unreal t.MaxFPS
-  - host [hle_fpslock.c:53](../../dm/host/hle_fpslock.c#L53): engine frame limit set to fps_target: Unreal rhi.SyncInterval
+  - host [hle_fpslock.c:54](../../dm/host/hle_fpslock.c#L54): engine frame limit set to fps_target: Unreal t.MaxFPS
+  - host [hle_fpslock.c:55](../../dm/host/hle_fpslock.c#L55): engine frame limit set to fps_target: Unreal rhi.SyncInterval
   - host [hle_uemalloc.c:48](../../dm/host/hle_uemalloc.c#L48): Unreal's allocator on a host malloc zone
 
 ### Paper Mario: The Thousand-Year Door
@@ -436,7 +451,7 @@ Every piece of code that runs for one game and not the others: the rewriter's pa
 [Pokémon Brilliant Diamond](../../dm/games/0100000011D90000/README.md), `0100000011D90000`.
 
 - **1.3.0 `main`** `94ceae32…`
-  - host [hle_fpslock.c:20](../../dm/host/hle_fpslock.c#L20): engine frame limit set to fps_target: Unity targetFrameRate
+  - host [hle_fpslock.c:22](../../dm/host/hle_fpslock.c#L22): engine frame limit set to fps_target: Unity targetFrameRate
 
 ### Pokémon Scarlet
 
@@ -456,8 +471,8 @@ Every piece of code that runs for one game and not the others: the rewriter's pa
 - **1.0.3 `main`** `0a4f14a5…` ([patches.py:9](../../dm/games/010069C01AB82000/patches.py#L9))
   - cut `+0x1f2f63c`: GCreateMalloc: bl FMallocBinned3 constructor -> nop; host malloc zone installed at OBS_UE_MALLOC
   - gate 21 at `+0x1f2f644`: GCreateMalloc: x19 is the allocator object; install the host vtable before use; orig mov x0, x19
-  - host [hle_fpslock.c:57](../../dm/host/hle_fpslock.c#L57): engine frame limit set to fps_target: Unreal Project.FrameRateLimit
-  - host [hle_fpslock.c:58](../../dm/host/hle_fpslock.c#L58): engine frame limit set to fps_target: Unreal rhi.SyncInterval
+  - host [hle_fpslock.c:59](../../dm/host/hle_fpslock.c#L59): engine frame limit set to fps_target: Unreal Project.FrameRateLimit
+  - host [hle_fpslock.c:60](../../dm/host/hle_fpslock.c#L60): engine frame limit set to fps_target: Unreal rhi.SyncInterval
   - host [hle_uemalloc.c:51](../../dm/host/hle_uemalloc.c#L51): Unreal's allocator on a host malloc zone
 
 ### Subnautica
@@ -545,7 +560,7 @@ Every piece of code that runs for one game and not the others: the rewriter's pa
 
 **Generalize?** No for the hook sites (the game's own timing object). The translator's rule for one of its vertex shaders (Program.cs VertexCounterLowering) might become a general lowering of subgroup ballots in vertex shaders
 
-- **1.4.3 `main`** `277178b7…` ([patches.py:142](../../dm/games/0100F2C0115B6000/patches.py#L142))
+- **1.4.3 `main`** `277178b7…` ([patches.py:136](../../dm/games/0100F2C0115B6000/patches.py#L136))
   - frame step `+0xd5cc0`: view render size x the host render scale (1.0 = original)
   - frame step `+0xd5d80`: dynamic resolution only at render scale 1.0
   - frame step `+0x1fbc80`: D-pad menu fade starts at full rate under fractional steps (FPSLocker)
@@ -555,8 +570,6 @@ Every piece of code that runs for one game and not the others: the rewriter's pa
   - frame step `+0x3e562c`: game step reads the float fps (original integer fps and scvtf when off)
   - frame step `+0x3e5638`: scvtf moved into the stub at the load
   - frame step `+0xbe14a8`: swapchain argument 1 when on (FPSLocker)
-  - frame step `+0x2b33918`: movie ends
-  - frame step `+0x2b36100`: movie starts: 30 fps cap
   - render scale stub (the launcher offers DM_RENDER_SCALE)
 
 ### Xenoblade Chronicles 3
@@ -667,7 +680,7 @@ Cuts of Nintendo SDK `sdk` builds ([sdk_patches.py](../../dm/tools/sdk_patches.p
   - cut `+0x336b50`: AddressRegionManager constructor: node area limit orr w9,wzr,#0x3fe00000 → mov w9,#0x3e00000
   - cut `+0x336bf0`: AddressRegionManager constructor: length of the node area registered as an occupied region orr w9,wzr,#0x3fe00000 → mov w9,#0x3e00000
   - cut `+0x336d5c`: AllocateAddressRegion: alignment of regions of 1 GB and more orr w10,wzr,#0x40000000 → mov w10,#0x2000000 (32 MB, as from 32 MB up)
-- **sdk** `d9add76f…` ([sdk_patches.py:227](../../dm/tools/sdk_patches.py#L227)): Advance Wars 1+2: Re-Boot Camp 1.0.0, The Great Ace Attorney Chronicles 1.0.0
+- **sdk** `d9add76f…` ([sdk_patches.py:227](../../dm/tools/sdk_patches.py#L227)): Advance Wars 1+2: Re-Boot Camp 1.0.0, Need For Speed™ Hot Pursuit Remastered 1.0.3, The Great Ace Attorney Chronicles 1.0.0
   - cut `+0x340ea0`: AddressRegionManager constructor: node area limit orr w8,wzr,#0x3fe00000 → mov w8,#0x3e00000
   - cut `+0x340f3c`: AddressRegionManager constructor: length of the node area registered as an occupied region orr w9,wzr,#0x3fe00000 → mov w9,#0x3e00000
   - cut `+0x34109c`: AllocateAddressRegion: alignment of regions of 1 GB and more orr w10,wzr,#0x40000000 → mov w10,#0x2000000 (32 MB, as from 32 MB up)
@@ -700,11 +713,11 @@ Applied to the `sdk` of any build without CUTS whose profile was not brought up 
 
 Dead code unless such a build is run; a candidate for removal, or for a build row in its profile.
 
-- `992787e2…`: [hle_fpslock.c:130](../../dm/host/hle_fpslock.c#L130): build check (a build no profile registers)
+- `992787e2…`: [hle_fpslock.c:141](../../dm/host/hle_fpslock.c#L141): build check (a build no profile registers)
 
 ## Translator rules keyed by a shader's code
 
-- [Program.cs:219](../../dm/gfx/tools/dmsh_xlate/Program.cs#L219): Tears of the Kingdom 1.4.3 visibility counter (one vertex shader, exact code SHA-256 below)
+- [Program.cs:220](../../dm/gfx/tools/dmsh_xlate/Program.cs#L220): Tears of the Kingdom 1.4.3 visibility counter (one vertex shader, exact code SHA-256 below)
 
 ## Profile switches
 
@@ -712,11 +725,13 @@ Profile keys (`game.tsv`) whose value changes what the host does, set away from 
 
 | Key and value | Games |
 |---|---|
+| `enc_thread on` | [Need For Speed™ Hot Pursuit Remastered](../../dm/games/010029B0118E8000/README.md) |
 | `game_env DOTNET_GCRegionRange=60000000` | [Absolum](../../dm/games/0100A83022A22000/README.md) |
 | `present_snap on` | [The Legend of Zelda: Breath of the Wild](../../dm/games/01007EF00011E000/README.md) |
 | `pso_mtl4 on` | [The Legend of Zelda: Breath of the Wild](../../dm/games/01007EF00011E000/README.md) |
 | `shader_key_skip 0x770+0x78` | [Batman: Arkham Knight](../../dm/games/0100ACD0163D0000/README.md) |
 | `stdalloc_cap 0xa0000000` | [Absolum](../../dm/games/0100A83022A22000/README.md) |
+| `ue_texture_pool 1000` | [DRAGON QUEST VII Reimagined](../../dm/games/0100A9D01C446000/README.md) |
 | `vconv_range on` | [Hyrule Warriors: Age of Calamity](../../dm/games/01002B00111A2000/README.md) |
 | `fps_hold off` | [Hyrule Warriors: Age of Calamity](../../dm/games/01002B00111A2000/README.md), [Paper Mario: The Thousand-Year Door](../../dm/games/0100ECD018EBE000/README.md) |
 | `perf_mode boost` | [Big Brain Academy: Brain vs. Brain](../../dm/games/0100620012D6E000/README.md), [Rhythm Heaven Groove](../../dm/games/0100D9F01D474000/README.md) |
@@ -728,8 +743,8 @@ Profile keys (`game.tsv`) whose value changes what the host does, set away from 
 | `render_cond on` | [Animal Crossing: New Horizons](../../dm/games/01006F8002326000/README.md), [Mario Kart 8 Deluxe](../../dm/games/0100152000022000/README.md), [Mario vs. Donkey Kong](../../dm/games/0100B99019412000/README.md), [The Legend of Zelda: Tears of the Kingdom](../../dm/games/0100F2C0115B6000/README.md) |
 | `alloc_big_align on` | [13 Sentinels: Aegis Rim](../../dm/games/01003FC01670C000/README.md), [13 Sentinels: Aegis Rim (Asia)](../../dm/games/01008D7016438000/README.md), [13 Sentinels: Aegis Rim (Japan)](../../dm/games/010045C014650000/README.md), [Unicorn Overlord](../../dm/games/010069401ADB8000/README.md), [Unicorn Overlord (Asia)](../../dm/games/010054B01AD92000/README.md) |
 | `feedback_snap (shader keys)` | [Captain Toad: Treasure Tracker](../../dm/games/01009BF0072D4000/README.md), [NieR:Automata The End of YoRHa Edition (010056B015FE8000)](../../dm/games/010056B015FE8000/README.md), [NieR:Automata The End of YoRHa Edition (0100B8E016F76000)](../../dm/games/0100B8E016F76000/README.md), [Paper Mario: The Origami King](../../dm/games/0100A3900C3E2000/README.md), [Super Mario 3D World + Bowser's Fury](../../dm/games/010028600EBDA000/README.md), [Super Mario Bros. Wonder](../../dm/games/010015100B514000/README.md) |
-| `present_interval display` | [Luigi's Mansion 3](../../dm/games/0100DCA0064A6000/README.md), [Monster Hunter Rise](../../dm/games/0100B04011742000/README.md), [Monster Train 2](../../dm/games/010051701FB46000/README.md), [NieR:Automata The End of YoRHa Edition (010056B015FE8000)](../../dm/games/010056B015FE8000/README.md), [NieR:Automata The End of YoRHa Edition (0100B8E016F76000)](../../dm/games/0100B8E016F76000/README.md), [Pokémon Brilliant Diamond](../../dm/games/0100000011D90000/README.md) |
 | `op_mode handheld` | [Balatro](../../dm/games/0100CD801CE5E000/README.md), [Big Brain Academy: Brain vs. Brain](../../dm/games/0100620012D6E000/README.md), [Captain Toad: Treasure Tracker](../../dm/games/01009BF0072D4000/README.md), [Rhythm Heaven Groove](../../dm/games/0100D9F01D474000/README.md), [Super Mario Galaxy](../../dm/games/010099C022B96000/README.md), [Super Mario Galaxy 2](../../dm/games/0100FD8022DAA000/README.md), [Taiko Risshiden V DX](../../dm/games/0100346017304000/README.md) |
+| `present_interval display` | [Luigi's Mansion 3](../../dm/games/0100DCA0064A6000/README.md), [Monster Hunter Rise](../../dm/games/0100B04011742000/README.md), [Monster Train 2](../../dm/games/010051701FB46000/README.md), [Need For Speed™ Hot Pursuit Remastered](../../dm/games/010029B0118E8000/README.md), [NieR:Automata The End of YoRHa Edition (010056B015FE8000)](../../dm/games/010056B015FE8000/README.md), [NieR:Automata The End of YoRHa Edition (0100B8E016F76000)](../../dm/games/0100B8E016F76000/README.md), [Pokémon Brilliant Diamond](../../dm/games/0100000011D90000/README.md) |
 | `tex_dirty_upload on` | [FINAL FANTASY TACTICS - The Ivalice Chronicles](../../dm/games/010038B015560000/README.md), [Ghost Trick: Phantom Detective](../../dm/games/010029B018432000/README.md), [Monster Hunter Rise](../../dm/games/0100B04011742000/README.md), [NieR:Automata The End of YoRHa Edition (010056B015FE8000)](../../dm/games/010056B015FE8000/README.md), [NieR:Automata The End of YoRHa Edition (0100B8E016F76000)](../../dm/games/0100B8E016F76000/README.md), [OCTOPATH TRAVELER](../../dm/games/010057D006492000/README.md), [The Great Ace Attorney Chronicles](../../dm/games/010036E00FB20000/README.md), [The Legend of Zelda: Tears of the Kingdom](../../dm/games/0100F2C0115B6000/README.md), [Yoshi's Crafted World](../../dm/games/01006000040C2000/README.md) |
 | `tex_flush_upload on` | [FINAL FANTASY TACTICS - The Ivalice Chronicles](../../dm/games/010038B015560000/README.md), [Ghost Trick: Phantom Detective](../../dm/games/010029B018432000/README.md), [Hyrule Warriors: Age of Calamity](../../dm/games/01002B00111A2000/README.md), [Monster Hunter Rise](../../dm/games/0100B04011742000/README.md), [NieR:Automata The End of YoRHa Edition (010056B015FE8000)](../../dm/games/010056B015FE8000/README.md), [NieR:Automata The End of YoRHa Edition (0100B8E016F76000)](../../dm/games/0100B8E016F76000/README.md), [OCTOPATH TRAVELER](../../dm/games/010057D006492000/README.md), [The Great Ace Attorney Chronicles](../../dm/games/010036E00FB20000/README.md), [The Legend of Zelda: Tears of the Kingdom](../../dm/games/0100F2C0115B6000/README.md), [Yoshi's Crafted World](../../dm/games/01006000040C2000/README.md) |
-| `fps_target 60` | [ASTRAL CHAIN](../../dm/games/01007300020FA000/README.md), [DRAGON QUEST VII Reimagined](../../dm/games/0100A9D01C446000/README.md), [DRAGON QUEST XI S: Echoes of an Elusive Age – Definitive Edition](../../dm/games/01006C300E9F0000/README.md), [FINAL FANTASY RESONANCE](../../dm/games/0100606026F12000/README.md), [FINAL FANTASY RESONANCE (Asian release)](../../dm/games/0100B8A026F14000/README.md), [Hyrule Warriors: Age of Calamity](../../dm/games/01002B00111A2000/README.md), [Luigi's Mansion 3](../../dm/games/0100DCA0064A6000/README.md), [Monster Hunter Rise](../../dm/games/0100B04011742000/README.md), [NieR:Automata The End of YoRHa Edition (010056B015FE8000)](../../dm/games/010056B015FE8000/README.md), [NieR:Automata The End of YoRHa Edition (0100B8E016F76000)](../../dm/games/0100B8E016F76000/README.md), [OCTOPATH TRAVELER 0](../../dm/games/01005270232F2000/README.md), [OCTOPATH TRAVELER II](../../dm/games/0100A3501946E000/README.md), [Paper Mario: The Thousand-Year Door](../../dm/games/0100ECD018EBE000/README.md), [Pokémon Brilliant Diamond](../../dm/games/0100000011D90000/README.md), [SHIN MEGAMI TENSEI V: Vengeance](../../dm/games/010069C01AB82000/README.md), [The Legend of Zelda: Breath of the Wild](../../dm/games/01007EF00011E000/README.md), [The Legend of Zelda: Tears of the Kingdom](../../dm/games/0100F2C0115B6000/README.md) |
+| `fps_target 60` | [ASTRAL CHAIN](../../dm/games/01007300020FA000/README.md), [DRAGON QUEST VII Reimagined](../../dm/games/0100A9D01C446000/README.md), [DRAGON QUEST XI S: Echoes of an Elusive Age – Definitive Edition](../../dm/games/01006C300E9F0000/README.md), [FINAL FANTASY RESONANCE](../../dm/games/0100606026F12000/README.md), [FINAL FANTASY RESONANCE (Asian release)](../../dm/games/0100B8A026F14000/README.md), [Hyrule Warriors: Age of Calamity](../../dm/games/01002B00111A2000/README.md), [Luigi's Mansion 3](../../dm/games/0100DCA0064A6000/README.md), [Monster Hunter Rise](../../dm/games/0100B04011742000/README.md), [Need For Speed™ Hot Pursuit Remastered](../../dm/games/010029B0118E8000/README.md), [NieR:Automata The End of YoRHa Edition (010056B015FE8000)](../../dm/games/010056B015FE8000/README.md), [NieR:Automata The End of YoRHa Edition (0100B8E016F76000)](../../dm/games/0100B8E016F76000/README.md), [OCTOPATH TRAVELER 0](../../dm/games/01005270232F2000/README.md), [OCTOPATH TRAVELER II](../../dm/games/0100A3501946E000/README.md), [Paper Mario: The Thousand-Year Door](../../dm/games/0100ECD018EBE000/README.md), [Pokémon Brilliant Diamond](../../dm/games/0100000011D90000/README.md), [SHIN MEGAMI TENSEI V: Vengeance](../../dm/games/010069C01AB82000/README.md), [The Legend of Zelda: Breath of the Wild](../../dm/games/01007EF00011E000/README.md), [The Legend of Zelda: Tears of the Kingdom](../../dm/games/0100F2C0115B6000/README.md) |
