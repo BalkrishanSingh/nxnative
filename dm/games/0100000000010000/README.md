@@ -8,7 +8,7 @@ Update 1.4.1 (v393216) over the base game, SDK 7.3.2. Nintendo EPD's sead / agl 
 |---|---|---|
 | `pad_layout full` | `game.tsv` | the 3D gamepad layout |
 | 4 GB layout: `mem_reserve 0x100000000`, `mem_alias 0x10000000`, `mem_stack 0x10000000`, `app_pool 0xCD500000` | `game.tsv` | from the NSP script's provisional profile |
-| Node area cut and 32 MB alignment of large regions | `dm/tools/sdk_patches.py` SDK-wide rules, `sdk` build `fcf93a41…` | DRAGON QUEST XI S's build, cut by the SDK-wide rules; Odyssey has no virtual address memory and never allocates an address region |
+| Node area cut and 2 MB alignment of large regions (SDK 20's) | `dm/tools/sdk_patches.py` SDK-wide rules, `sdk` build `fcf93a41…` | DRAGON QUEST XI S's build, cut by the SDK-wide rules; Odyssey has no virtual address memory and never allocates an address region |
 
 No `patches.py`. `op_mode` stays docked: Odyssey only takes its motion moves in its default docked mode.
 
@@ -72,6 +72,7 @@ General host and tool changes first needed here; each applies to every game:
 - **Vertex fetches past a stream's bound size** (a copy padded with zeros): [Vertex fetches past a stream's bound size](../../../docs/reference/rendering.md#vertex-fetches-past-a-streams-bound-size).
 - **Invariant positions** (`-fpreserve-invariance` in `dmsh_build.py` and `ios_metal.py`): [Position invariance across shaders](../../../docs/reference/shaders.md#position-invariance-across-shaders).
 - **Full controller and six-axis histories**, **six-axis sensors and the shake** (`DM_BTN_SHAKE`), **SDK 7 start-up services**: [History reads fill every requested entry](../../../docs/reference/services.md#history-reads-fill-every-requested-entry), [Six-axis sensors](../../../docs/reference/services.md#six-axis-sensors), [SDK calls that open a system service through sm](../../../docs/reference/services.md#sdk-calls-that-open-a-system-service-through-sm).
+- **Resolved: crash entering a Sand Kingdom pipe with rumble on** (GitHub issue #715, 1.4.1): [Whether a vibration device is mounted](../../../docs/reference/services.md#whether-a-vibration-device-is-mounted).
 - **H.264 movies through VideoToolbox** (the `avcc` record, a presentation-order queue): described under [Movies](#movies); `hle_movie.c`.
 - **Small host segments for small grants** (`hostseg_size`): [Host-lent command memory segments](../../../docs/reference/nvn-objects.md#host-lent-command-memory-segments).
 - **Same-pass feedback snapshots without a per-game list** (a draw that writes the attachment it samples; one snapshot until the game's next barrier): [Same-pass feedback read through a snapshot](../../../docs/reference/rendering.md#same-pass-feedback-read-through-a-snapshot).
