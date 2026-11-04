@@ -2,6 +2,28 @@
 # .github/workflows/tests.yml); the repository is not a Python package.
 # Scope: scripts/ and the tools under dm/. extraPaths / extra-paths are the folders the tools put on sys.path to import each other.
 
+[project]
+name = "nxnative"
+version = "0.1.0"
+description = "nxnative tools and scripts"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "capstone>=5.0.9",
+    "fonttools>=4.67.0",
+    "lz4>=4.4.5",
+    "nsz>=5.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "pyright==1.1.414",
+    "ruff==0.17.2",
+]
+
+[tool.uv]
+package = false
+
 [tool.pyright]
 include = ["scripts", "dm/tools", "dm/gfx/tools", "dm/games/game.py", "dm/games/profile_guess.py", "dm/games/settings.py", "dm/ios/tools", "dm/mac"]
 extraPaths = ["dm/tools", "dm/gfx/tools", "dm/games", "dm/ios/tools", "dm/mac", "dm/tools/fuzz"]
