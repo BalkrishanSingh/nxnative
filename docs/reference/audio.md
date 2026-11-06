@@ -36,6 +36,13 @@ For a replaced DSP renderer the size query keeps the service's work-buffer contr
 - **Fix:** `hle_audren.c` keeps each renderer's state in `ar_t`: its render thread, output, catch-up queue, counters and upsampler history. Two renderers play through two outputs, which the sound card mixes. An SDK call that names only the `AudioRenderSystem` finds its renderer by `ar_of_sys`. One lock still serializes all rendering, since the header layout is decided once, from the first list, by trying each layout in turn; a frame takes about 0.02 ms. Catch-up renders went from 7,625 to 0 or 1 in a run. `dm/host/tests/t_audren_layout.c` checks the lookup and the upsampler's separate history.
 - **Found on:** [Mario & Luigi: Brothership](../../dm/games/01006D0017F7A000/README.md) (SDK 12.3.2): one renderer at 48 kHz, which sounds during the movie, and Unreal's mixer at 32 kHz.
 
+### Two renderers overwriting each other's queued blocks
+
+- **Symptom:** with two renderers open, one plays single 5 ms frames between silences and its sound effects are missing, while the other has an occasional all-zero 5 ms block; no underrun and no `[RED]` line, and the AudioOut `appended` and `released` counts stay balanced. Cross-correlating the outputs finds one renderer's waveform on the other.
+- **Cause:** AudioOut queues a block's pointer and copies its samples when the sound card asks (`h_au_Append`, `pull` in `hle_audio.c`). `render_main` kept its four blocks in function-level statics, left out when the renderer state moved into `ar_t`, so every render thread filled the same four. A block queued for one output could be rewritten by the other renderer's thread before it played. A second renderer's start also set the size of the blocks to 0 under the first one's output, whose `b->size - a->pos` could then underflow on a part-played block.
+- **Fix:** the blocks are in `ar_t`, one set per renderer. The slots are static and `CloseAudioRenderer` joins the render thread before a slot is reused, so a block outlives its output. `t_audren_layout` queues every block of one renderer, renders the other, and checks the first one's samples.
+- **Found on:** title `01007ED02424E000` (not in the [games table](../../dm/games/README.md#games); [issue #1336](https://github.com/seedds/nxnative/issues/1336), on an iPad Pro M1). [Mario & Luigi: Brothership](../../dm/games/01006D0017F7A000/README.md) also opens two renderers; it has not been run with the fix.
+
 ### The SDK's open with an event calls the open without one (`t_in_open`)
 
 - **Symptom:** `audren: OpenAudioRenderer` logged twice right after the first open, with the same work buffer and "original device 1 mode 1", and a second render thread (until 2026-11-04 the second log line was `[RED] audren: a second renderer`, which now means [more than one renderer](#a-game-with-more-than-one-renderer)).
@@ -341,6 +348,13 @@ For a replaced DSP renderer the size query keeps the service's work-buffer contr
 - **Cause:** SDK 21's asynchronous interface to the hardware decoder: a manager (`HardwareOpusDecoderManagerType`, with a system event, a decoder count and an I/O buffer count) owns decoders (`InitializeHardwareOpusDecoder` with a manager). The game enqueues one packet per call (`EnqueueOpusDataToHardwareOpusDecoder`, Nintendo's 8-byte header and the packet, as `DecodeOpusInterleaved` takes it; it expects all of it consumed), calls `ExecuteHardwareOpusDecoderDecoding` once per audio frame, dequeues finished frames (`DequeuePcmInterleavedDataFromHardwareOpusDecoder`) as many as the completed count, and reads the waiting / executing / completed counts and the free I/O buffers. It tells an initialized manager by the struct's first word.
 - **Fix:** `hle_codec.c` keeps the manager in host state (its pointer in that first word) and decodes with the `sdk`'s software `OpusDecoder`: Enqueue queues the packet and takes an I/O buffer, Execute decodes every waiting packet on the caller's thread and signals the event, Dequeue hands back a frame and its buffer. So a request is never "executing". A packet the decoder refuses completes as 20 ms of silence, with a red line. `ResetHardwareOpusDecoder` and `FinalizeHardwareOpusDecoder` serve both interfaces.
 - **Found on:** Xenoblade Chronicles 2, Nintendo Switch 2 Edition (`0400E95004038001`) (SDK 21.4.4: a mono manager of 128 decoders and 255 I/O buffers, a stereo one of 72 and 160, 48 kHz, 20 ms frames); [Star Fox](../../dm/games/0400E88025B1A000/README.md) (the same figures).
+
+### One key for the two forms of the Opus decoder
+
+- **Symptom:** `CRASH sig=11 addr=0` in `h_codec_HwOpusFini`, the first time the game finalizes a decoder.
+- **Cause:** the older interface keeps the software state in `objmap` under the game's decoder object, and SDK 21's manager form its own record under the same key. `opus_mgr_dec_fini` told them apart by a field at +0x10, 0 in the software state as far as Star Fox had shown, but the work buffer's size in this one. It read the state as a record, so a pointer in it became the manager.
+- **Fix:** a manager's decoder is kept under the object + 1 (`OPUS_MGR_KEY`), so the look-up itself says which form it is; `GetHardwareOpusDecoderSampleRate` and `ChannelCount` now also read a manager's decoder correctly.
+- **Found on:** [Kirby Air Riders](../../dm/games/040077201BE50000/README.md) (SDK 20.5.26, 48 kHz stereo, the older form).
 
 ## Timing and catch-up
 
