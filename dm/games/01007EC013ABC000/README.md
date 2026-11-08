@@ -22,7 +22,7 @@ Update 1.28.0 (v524288) over the base game, SDK 13.3.0. Custom C++ engine (BlitW
 
 - RomFS: placeholder containing 2 entries; game assets and shaders are packed inside `main`'s 337 MB internal data block (`0x32aea4` to `0x154ffd50`).
 - 107 shaders (93 pixel, 14 vertex) extracted and decrypted by `spel2.py`; paired with a 1-shader pixel cover (`c0ce161c53cdc793`) and compiled for Mac into `b-a02f1e0dfdde.img`.
-- Prewarm seed list: 111 entries in `pso_manifest.tsv`.
+- Prewarm seed list: 146 entries in `pso_manifest.tsv` (113 seed lines from title/boot, plus 33 gameplay pipeline lines recorded from play sessions).
 
 ## Frame rate
 

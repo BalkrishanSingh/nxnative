@@ -68,23 +68,20 @@ def keyed_hashing(filepath: bytes, key: bytes) -> bytes:
         out.extend(xor_bytes(partial, bytes(reversed(key[:len(partial)]))))
     return bytes(out)
 
-def hash_filepath_v2(key: int, filepath: bytes) -> bytes:
+def derive_round_key(key: int, filepath: bytes, modifier: int) -> bytes:
     init_quads = [key, len(filepath), 0, 0, 0, 0, 0, 0]
     h = mix_in(two_rounds(struct.pack('<8Q', *init_quads)), filepath)
     tmp = add_bytes_as_quads(h, quad_rounds(h))
     quads = list(struct.unpack('<8Q', tmp))
-    quads[0] ^= len(filepath)
-    k = quad_rounds(struct.pack('<8Q', *quads))
+    quads[0] ^= (modifier & 0xFFFFFFFFFFFFFFFF)
+    return quad_rounds(struct.pack('<8Q', *quads))
+
+def hash_filepath_v2(key: int, filepath: bytes) -> bytes:
+    k = derive_round_key(key, filepath, len(filepath))
     return keyed_hashing(filepath, k)
 
 def decrypt_v2(key: int, filepath: bytes, data: bytes) -> bytes:
-    init_quads = [key, len(filepath), 0, 0, 0, 0, 0, 0]
-    h = two_rounds(struct.pack('<8Q', *init_quads))
-    h = mix_in_filepath(filepath, h)
-    tmp = add_bytes_as_quads(h, quad_rounds(h))
-    quads = list(struct.unpack('<8Q', tmp))
-    quads[0] ^= ((key + len(data)) & 0xFFFFFFFFFFFFFFFF)
-    k = quad_rounds(struct.pack('<8Q', *quads))
+    k = derive_round_key(key, filepath, key + len(data))
     out = bytearray(); pos = 0; blocks = len(data) // 64
     if blocks > 0:
         out.extend(xor_bytes(data[:blocks * 64], bytes(reversed(k)) * blocks))

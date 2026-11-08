@@ -52,13 +52,16 @@ BIG_TEXT = FAR and MOD.text_end + FRONT > 0x8000000 - 0x10000
 # SPLIT is also no lower than the lowest site the back area reaches with the same margin (BACK_MIN): when ro, data and bss after the text are large (Hello Kitty Party Land: 151.8 MB
 # of text, 98 MB more before BACK_OFF), a 16 MB front area would hand the back area sites more than 128 MB below it, so the front area's first pass takes the gap up to BACK_MIN instead.
 # When a module exceeds 256 MB (Spelunky 2: 346 MB text with a 337 MB internal data block), the two areas cannot overlap; SPLIT = BACK_MIN reaches as long as no rewrite site falls in the middle gap.
-TWO = BIG_TEXT and MOD.text_end > 0x8000000 - 0x10000
+REACH = 0x8000000        # 128 MB: direct B / BL reach
+MARGIN = 0x100000        # 1 MB margin for stub exits
+SPLIT_THRESHOLD = REACH - 2 * MARGIN  # 126 MB: minimum limit before front and back areas cannot overlap
+TWO = BIG_TEXT and MOD.text_end > REACH - 0x10000
 BACK_MIN = 0   # TWO: BACK_OFF (set below) less the reach, plus the margin
 if TWO:
-    BACK_MIN = ((((len(MOD.image) + bss + 0x3FFF) & ~0x3FFF) + 0x8000 + 0xFFFF) & ~0xFFFF) - 0x8000000 + 0x100000
-    FRONT = int(os.environ.get('DM_PATCH_FRONT', '0'), 0) or (min(0x1000000, (0x8000000 - 0x100000 - BACK_MIN) & ~0xFFFF) if BACK_MIN < 0x8000000 - 0x200000 else 0x1000000)
-elif BIG_TEXT: FRONT = int(os.environ.get('DM_PATCH_FRONT', '0'), 0) or (0x8000000 - 0x10000 - MOD.text_end) & ~0xFFFF
-SPLIT = (max(0x8000000 - FRONT - 0x100000, BACK_MIN) if BACK_MIN < 0x8000000 - 0x200000 else BACK_MIN) if TWO else None
+    BACK_MIN = ((((len(MOD.image) + bss + 0x3FFF) & ~0x3FFF) + 0x8000 + 0xFFFF) & ~0xFFFF) - REACH + MARGIN
+    FRONT = int(os.environ.get('DM_PATCH_FRONT', '0'), 0) or (min(0x1000000, (REACH - MARGIN - BACK_MIN) & ~0xFFFF) if BACK_MIN < SPLIT_THRESHOLD else 0x1000000)
+elif BIG_TEXT: FRONT = int(os.environ.get('DM_PATCH_FRONT', '0'), 0) or (REACH - 0x10000 - MOD.text_end) & ~0xFFFF
+SPLIT = (max(REACH - FRONT - MARGIN, BACK_MIN) if BACK_MIN < SPLIT_THRESHOLD else BACK_MIN) if TWO else None
 IMG = MOD.image
 ORIG_TEXT = bytes(IMG[:MOD.text_end])   # the text as the file has it, before any cut or site: <name>.changed.tsv compares against it
 if not FAR: IMG.extend(bytes(bss))
@@ -261,8 +264,8 @@ patch_front, patch_back, PATCH_BASE = patch, bytearray(), PATCH_OFF   # the area
 def use_area(a):
     """Emit what follows into the patch area that reaches the code at offset a (TWO: the back area from SPLIT on)"""
     global patch, PATCH_BASE
-    if TWO and BACK_MIN >= 0x8000000 - 0x200000:
-        assert a <= 0x8000000 - FRONT - 0x100000 or a >= BACK_MIN, f'no split reaches site {a:#x}: falls between front area reach ({0x8000000 - FRONT - 0x100000:#x}) and back area reach ({BACK_MIN:#x})'
+    if TWO and BACK_MIN >= SPLIT_THRESHOLD:
+        assert a <= REACH - FRONT - MARGIN or a >= BACK_MIN, f'no split reaches site {a:#x}: falls between front area reach ({REACH - FRONT - MARGIN:#x}) and back area reach ({BACK_MIN:#x})'
     patch, PATCH_BASE = (patch_back, BACK_OFF) if TWO and a >= SPLIT else (patch_front, PATCH_OFF)
 def stat(k): stats[k] = stats.get(k, 0) + 1
 def here(): return PATCH_BASE + len(patch)
