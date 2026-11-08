@@ -16,12 +16,7 @@ Update 1.28.0 (v524288) over the base game, SDK 13.3.0. Custom C++ engine (BlitW
 
 ## Memory
 
-- **Resolved: crash at `main+0x30b150` (SIGSEGV, addr `0x400000008`) when address region allocation failed.** Spelunky 2's engine sets up five 4 GB-spaced heaps by calling `nn::os::AllocateAddressRegion(0x500000000)` (20 GB) up to 6 times. For each candidate region pointer `ptr`, it tests:
-  ```c
-  uint64_t cand = (ptr & ~0xffffffffULL) | 0x7f800000ULL;
-  if (cand > ptr && cand + 0x402000000 <= ptr + 0x500000000) { /* match */ }
-  ```
-  The check ensures all five 4 GB heaps (each mapping 32 MB initially, ending at `cand + 0x402000000`) fit entirely inside the 20 GB reservation. This holds whenever the candidate's lower 32 bits satisfy `(uint32_t)ptr < 0x7f800000` (~2.04 GB). Because 20 GB is an exact multiple of 4 GB (`5 * 0x100000000`), every sequential 20 GB region shares the lower 32-bit offset of the first region. With `mem_reserve 0x200000000` and `mem_alias 0x100000000`, `RESERVE - DM_GAME_MEM_ALIAS = 4 GB`, placing `g_alias` on an exact 4 GB boundary. After the 62 MB node area and 32 MB alignment, Region 0 starts at offset `0x04000000` (64 MB), which immediately satisfies `< 0x7f800000` on the first attempt, freeing the other attempts and initializing all 5 heaps (`Success: 1`). See [4 GB-aligned alias region for multi-gigabyte fixed-offset heaps](../../../docs/reference/memory.md#4-gb-aligned-alias-region-for-multi-gigabyte-fixed-offset-heaps).
+- **Resolved: crash at `main+0x30b150` (SIGSEGV, addr `0x400000008`) when address region allocation failed.** Spelunky 2's engine sets up five 4 GB-spaced heaps by calling `nn::os::AllocateAddressRegion(0x500000000)` (20 GB), requiring `(uint32_t)ptr < 0x7f800000`. With `mem_reserve 0x200000000` (8 GB) and `mem_alias 0x100000000` (4 GB), `RESERVE - DM_GAME_MEM_ALIAS = 4 GB` aligns `g_alias` on an exact 4 GB boundary, placing Region 0 at offset `0x04000000 < 0x7f800000` so the first region attempt initializes all 5 heaps (`Success: 1`). See [4 GB-aligned alias region for multi-gigabyte fixed-offset heaps](../../../docs/reference/memory.md#4-gb-aligned-alias-region-for-multi-gigabyte-fixed-offset-heaps).
 
 ## Files and shaders
 

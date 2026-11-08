@@ -59,13 +59,7 @@ def mix_in(h: bytes, s: bytes) -> bytes:
     return bytes(out)
 
 def mix_in_filepath(filepath: bytes, h: bytes) -> bytes:
-    out = bytearray(h)
-    for idx in range(0, len(filepath), 64):
-        amount = min(idx + 64, len(filepath)); partial = filepath[idx:amount]
-        new_out = bytearray(xor_bytes(out[:len(partial)], bytes(reversed(partial))))
-        new_out.extend(out[len(partial):])
-        out = bytearray(quad_rounds(bytes(new_out)))
-    return bytes(out)
+    return mix_in(h, filepath)
 
 def keyed_hashing(filepath: bytes, key: bytes) -> bytes:
     out = bytearray()
@@ -100,18 +94,22 @@ def decrypt_v2(key: int, filepath: bytes, data: bytes) -> bytes:
         out.extend(xor_bytes(data[pos:], bytes(reversed(k[:rem]))))
     return bytes(out)
 
+PATH_LEN_MIN = 10
+PATH_LEN_MAX = 256
+DATA_LEN_MAX = 0x10000000
+
 def find_bundle_start(img: bytes) -> Optional[int]:
     """Find the start of the embedded asset bundle by locating sequential bundle entries:
     data_len (u32), filepath_len (u32), filepath_hash (filepath_len bytes), is_encrypted (u8)"""
     limit = min(len(img) - 16, 0x1000000)
     for o in range(0x100000, limit, 4):
         dlen, flen = struct.unpack_from('<II', img, o)
-        if 10 <= flen <= 256 and 10 <= dlen <= 0x10000000:
+        if PATH_LEN_MIN <= flen <= PATH_LEN_MAX and PATH_LEN_MIN <= dlen <= DATA_LEN_MAX:
             if o + 8 + flen < len(img) and img[o + 8 + flen] in (0, 1):
                 next_o = o + 8 + flen + dlen
                 if next_o < len(img) - 8:
                     dlen2, flen2 = struct.unpack_from('<II', img, next_o)
-                    if 10 <= flen2 <= 256 and 10 <= dlen2 <= 0x10000000 and img[next_o + 8 + flen2] in (0, 1):
+                    if PATH_LEN_MIN <= flen2 <= PATH_LEN_MAX and PATH_LEN_MIN <= dlen2 <= DATA_LEN_MAX and img[next_o + 8 + flen2] in (0, 1):
                         return o
     return None
 
