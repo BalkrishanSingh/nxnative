@@ -123,6 +123,18 @@ The guest address space, heaps, pools, virtual address memory and the allocators
 
 ## Virtual address memory and the alias region
 
+### 4 GB-aligned alias region for multi-gigabyte fixed-offset heaps
+
+- **Symptom:** `[game] VA base: 0 | Heap base: 0 | Success: 0` followed by SIGSEGV (`addr=0x400000008`) at `main+0x30b150` on `AllocateAddressRegion` failure.
+- **Cause:** the game's engine sets up five 4 GB-spaced heaps by calling `nn::os::AllocateAddressRegion(0x500000000)` (20 GB) up to 6 times. For each candidate region pointer `ptr`, it tests:
+  ```c
+  uint64_t cand = (ptr & ~0xffffffffULL) | 0x7f800000ULL;
+  if (cand > ptr && cand + 0x402000000 <= ptr + 0x500000000) { /* match */ }
+  ```
+  The check ensures all five 4 GB heaps (each mapping 32 MB initially, ending at `cand + 0x402000000`) fit entirely inside the 20 GB reservation. This holds whenever the candidate's lower 32 bits satisfy `(uint32_t)ptr < 0x7f800000` (~2.04 GB). Because 20 GB is an exact multiple of 4 GB (`5 * 0x100000000`), every sequential 20 GB region shares the lower 32-bit offset of the first region. If `g_alias` is offset from a 4 GB boundary, every region fails the check.
+- **Fix:** set `mem_reserve 0x200000000` (8 GB) and `mem_alias 0x100000000` (4 GB) so `RESERVE - DM_GAME_MEM_ALIAS = 4 GB` is 4 GB aligned. `g_alias` begins on a 4 GB boundary, placing the first region at lower 32-bit offset `0x04000000 < 0x7f800000`, so the first attempt succeeds immediately.
+- **Found on:** [Spelunky 2](../../dm/games/01007EC013ABC000/README.md).
+
 ### Virtual address memory follows the NPDM's system resource
 
 - **Symptom:** `StandardAllocator::Initialize` aborts in `nninitStartup` (Fire Emblem Engage); `nn::diag` abort in `StandardAllocator::Initialize(void *, size_t, bool)` from `nninitStartup` (`sdk+0x2f98e4` ← `main+0x5b69e0`, Big Brain Academy: Brain vs. Brain).

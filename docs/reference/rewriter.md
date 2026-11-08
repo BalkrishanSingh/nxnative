@@ -355,6 +355,13 @@ To enroll a cut for any game's own module:
 - **Fix:** `SPLIT` is also no lower than `BACK_MIN`, `BACK_OFF` less the reach plus the same 1 MB of margin. When that lifts it, the front area's first pass takes the gap up to `BACK_MIN` instead of 16 MB, so the front area still reaches every site below the split; the rerun with exactly the size its sites need works as before, and `B()` checks every branch. A module whose back area already reaches the 16 MB split (EA SPORTS FC 27) is rewritten byte for byte as before; one where no split reaches stops with a message naming `BACK_MIN`.
 - **Found on:** Hello Kitty Party Land `main` (1.0.2): 151.8 MB of text and 98 MB of ro, data and bss after it; `SPLIT` `0x7b40000`, 1.7 MB of stubs in a 3.75 MB front area (no rerun) and 123 KB at `BACK_OFF` `0xfa40000`.
 
+### Modules exceeding 256 MB with an internal data block
+
+- **Symptom:** `AssertionError: no split reaches: the back patch area reaches no site below 0xe9a0000, too close to the front area's reach`.
+- **Cause:** when a module's text exceeds 256 MB, `BACK_MIN` exceeds `0x8000000 - 0x200000`. The front and back patch areas do not overlap in reach.
+- **Fix:** when `BACK_MIN >= 0x8000000 - 0x200000`, set `SPLIT = BACK_MIN` and assert that no site falls in the unreached middle gap between the front and back areas' reach. Modules with large middle data blocks (such as embedded virtual filesystems) have rewrite sites only in the outer code sections, which both areas reach.
+- **Found on:** [Spelunky 2](../../dm/games/01007EC013ABC000/README.md).
+
 ## Cuts and observation gates
 
 ### Observation gates on any relocatable instruction

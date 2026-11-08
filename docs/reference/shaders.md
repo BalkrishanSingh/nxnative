@@ -4,6 +4,14 @@ Finding, keying and translating shaders (`dm/gfx/tools/shader_split.py`, `dmsh_b
 
 ## Containers by engine
 
+### Encrypted asset bundles in main
+
+- **Symptom:** the shader split finds no shaders in `main` or the RomFS: `[RED] the shader split found no shaders in main or the RomFS: the game keeps them in a form shader_split.py does not read; locate them (docs/agents) and add a reader`. The RomFS is an 88-byte placeholder and `main` contains a multi-hundred megabyte data section inside text.
+- **Cause:** the game bundles all assets and shaders in an internal virtual filesystem (`spel2:/Data/ShadersNX/`) embedded inside `main`'s 337 MB data block, encrypted with ChaCha (`Spel2ChaChaVersion2`) and compressed with zstd, keyed by a NASAM mixer (`xnasamx`).
+- **Fix:** `dm/gfx/tools/spel2.py` finds the bundle magic, decrypts the directory manifest and individual shader entries, and decompresses the zstd frames. `shader_split.py` extracts the Maxwell code and control sections, validates them via `check()`, and pairs single-stage vertex shaders with a pixel-input cover.
+- **Check:** `dm/tools/tests/test_split_spel2.py` tests NASAM test vectors, filepath hashing, ChaCha roundtrips, and synthetic bundle extraction.
+- **Found on:** [Spelunky 2](../../dm/games/01007EC013ABC000/README.md): 107 shaders (93 pixel, 14 vertex).
+
 ### One scrambled archive indexed by the NRO
 
 - **Symptom:** the split finds no shaders, and the RomFS is one huge file with a short name (`42`) whose bytes look random past a table at its start (magic `CRA.`).

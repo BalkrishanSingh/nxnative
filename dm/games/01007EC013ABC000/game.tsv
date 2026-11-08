@@ -1,0 +1,36 @@
+# Game profile of Spelunky 2 (Switch, update 1.28.0 = v524288)
+# BlitWorks / Mossmouth, NVN, FMOD audio, SDK 13.3.0
+
+# ---- Identity ----
+title_id	01007EC013ABC000
+program_id	01007EC013ABC000
+
+# ---- App ----
+name	Spelunky 2
+ipa	Spelunky2.ipa
+app_category	public.app-category.games
+
+# ---- Versions ----
+build	v524288	1.28.0	main=389ea5c4c9736ed70e28bbc6174adaad	sdk=2bf3519216f5b9d3e8ce26863c2e98b6
+package	v524288
+shader_versions	v524288
+
+# ---- Files ----
+modules	main sdk
+romfs_marker	.gitkeep
+zip_store	.metallib
+
+# ---- Memory ----
+mem_reserve	0x200000000
+mem_alias	0x100000000
+mem_stack	0x10000000
+app_pool	0xCD500000
+sys_resource	0x200000
+mem_used	0x16e00000
+
+# ---- Graphics ----
+depth_mode	zero
+
+# ---- Shader split ----
+shader_groups	/=main
+shader_note	Spelunky 2 shaders
