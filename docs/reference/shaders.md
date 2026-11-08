@@ -355,6 +355,13 @@ Finding, keying and translating shaders (`dm/gfx/tools/shader_split.py`, `dmsh_b
 - **Fix:** `mgfx_effect` reads version 5 too, taking each shader through `glslc_shaders`; an XNB effect may end in zeros. The 7 `.dx11.mgfxo` files in `Resources` (MonoGame's stock effects) are version 5 as well: 5 hold GLSLC outputs and are read the same way, `EnvironmentMapEffect` and `SkinnedEffect` hold only DirectX bytecode and give no shader.
 - **Found on:** [Bastion](../../dm/games/010038600B27E000/README.md): 72 shaders, 24 pixel shaders in `Content/Effects` (no vertex shader: SpriteBatch's own pairs with them) and 48 in `Resources`.
 
+### MGFX version 10 effects (.zxnb deflate streams)
+
+- **How it is stored:** MonoGame BRUTE in newer games stores effects in `Content/Shaders/*.zxnb`. These are raw deflate streams (`zlib.decompress(d, -15)`) wrapping MonoGame XNB data with `EffectReader`.
+- **Layout:** MGFX version 10 (`v == 10`) extends MGFX version 8: 32-bit counts for constant buffers, parameters, and techniques instead of 8-bit counts; 32-bit pass shader indices (`i32`) instead of 8-bit; each constant buffer entry has 6 bytes of parameter/offset mapping instead of 3; and the effect block terminates with a trailing `b'MGFX'` sentinel. The first shader's control section offset sits at `r.p + 13`.
+- **Reader:** `mgfx_effect` in `shader_split.py` handles version 10 alongside versions 5 and 8. `scan_file_in` uncompresses `.zxnb` raw deflate streams before checking for `EffectReader`.
+- **Found on:** [Teenage Mutant Ninja Turtles: Shredder's Revenge](../../dm/games/0100FE701475A000/README.md) (update 1.0.9, SDK 13.3.2): 88 shaders (44 vertex, 44 pixel) across 25 effect files.
+
 ### Unity 2020.3 Shader objects in UnityFS bundles
 
 - **How it is stored:** Unity 2020.3 keeps each shader's compiled programs in its `Shader` object (class 48), in UnityFS bundles (`StreamingAssets/aa`) and in the player's own serialized files (`data.unity3d`, `Resources/unity default resources`).

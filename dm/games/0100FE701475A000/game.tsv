@@ -1,0 +1,35 @@
+# Teenage Mutant Ninja Turtles: Shredder's Revenge (Tribute Games / Dotemu, MonoGame BRUTE, SDK 13.3.2), update 1.0.9 (v589824).
+# NVN graphics API. Shaders are MonoGame MGFX version 10 effects in Content/Shaders/*.zxnb.
+# Offline: Epic Online Services in NRO is refused; EOSManager.Initialize cut in main prevents null-dereference SIGSEGV.
+
+# ---- Identity ----
+title_id	0100FE701475A000
+program_id	0100FE701475A000
+
+# ---- App ----
+name	Teenage Mutant Ninja Turtles: Shredder's Revenge
+ipa	TMNTShreddersRevenge.ipa
+app_category	public.app-category.action-games
+pad_layout	simple
+
+# ---- Versions ----
+# subsdk1 is bit-for-bit identical to sdk in this game's ExeFS, sharing its build ID
+build	v589824	1.0.9	main=24e483af4f3bed10685600eedff3d844	subsdk0=a8cb97803f7f442a3b6cce1c7cd4ee4a	subsdk1=357efc198e728cb5d55265aff304f03c	sdk=357efc198e728cb5d55265aff304f03c
+package	v589824
+shader_versions	v589824
+
+# ---- Files ----
+modules	main subsdk0 subsdk1 sdk
+romfs_marker	Content/Audio/SFXPack.pbn
+zip_store	.zxnb:.pbn:.bnk:.pck:.metallib
+
+# ---- Memory ----
+mem_reserve	0x100000000
+mem_alias	0x10000000
+mem_stack	0x10000000
+app_pool	0xCD500000
+mem_used	0xAC00000
+
+# ---- Shader split ----
+shader_groups	/Content/Shaders/=shader
+shader_note	Teenage Mutant Ninja Turtles: Shredder's Revenge shaders

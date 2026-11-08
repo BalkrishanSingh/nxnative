@@ -1743,22 +1743,25 @@ def mgfx_effect(d, p, label):
     version 8's or its first shader is not an NVN one (four bytes 'MGFX' anywhere in a main).
     Version 5 (Bastion: MonoGame 3.0's EffectReader, 24 XNB files in Content/Effects and 7 .dx11.mgfxo files in Resources) has no effect key and no constant buffer names, each shader's
     bytecode is a whole GLSLC output of one stage, and its shaders are written in MonoGame's DirectX layout: no sampler names and no attribute list"""
-    v5 = d[p + 4:p + 5] == b'\x05'
-    if d[p + 4:p + 5] != b'\x08' and not v5: return None
+    v = d[p + 4] if p + 4 < len(d) else 0
+    if v not in (5, 8, 10): return None
+    v5, v10 = v == 5, v == 10
     r = _Rd(d, p + (6 if v5 else 10))
+    read_cnt = lambda: r.un('<I') if v10 else r.u8()
     try:
-        for _ in range(r.u8()):
+        for _ in range(read_cnt()):
             if not v5: r.str()
-            r.raw(2); r.raw(3 * r.u8())
-        if d[r.p + 6:r.p + 10] != b'\x91\x68\x86\x19' if v5 else d[r.p + 10:r.p + 14] != CTL_MAGIC: return None   # shader count, then the first shader's stage, length (and control length)
-    except IndexError: return None
+            r.raw(2); r.raw((6 if v10 else 3) * read_cnt())
+        ctl_off = r.p + 6 if v5 else r.p + 13 if v10 else r.p + 10
+        if d[ctl_off:ctl_off + 4] != (b'\x91\x68\x86\x19' if v5 else CTL_MAGIC): return None   # shader count, then the first shader's stage, length (and control length)
+    except (IndexError, struct.error): return None
     def no_annotations():
-        if r.u8(): red(f'{label} MGFX @{p:#x}: annotations (MonoGame writes none)')
+        if read_cnt(): red(f'{label} MGFX @{p:#x}: annotations (MonoGame writes none)')
     out = []
-    for i in range(r.u8()):
+    for i in range(read_cnt()):
         vs, n = r.u8(), r.un('<I')
         if r.p + n > len(d):   # a shader whose length runs past the data: a stray 'MGFX' in other content, not an effect
-            if label.endswith('.xnb'): red(f'{label} MGFX @{p:#x}: shader {i} claims {n:#x} bytes past the end of the file')
+            if label.endswith(('.xnb', '.zxnb')): red(f'{label} MGFX @{p:#x}: shader {i} claims {n:#x} bytes past the end of the file')
             return None
         bc = r.raw(n)
         if v5:
@@ -1782,7 +1785,7 @@ def mgfx_effect(d, p, label):
         if not v5:
             for _ in range(r.u8()): r.str(); r.raw(4)
     def params():   # {u8 class, u8 type, name, semantic, annotations, u8 rows, u8 columns, elements, struct members, the value when it has neither} each → how many
-        n = r.u8()
+        n = read_cnt()
         for _ in range(n):
             typ = r.raw(2)[1]; r.str(); r.str(); no_annotations()
             rows, cols = r.u8(), r.u8()
@@ -1791,21 +1794,27 @@ def mgfx_effect(d, p, label):
             elif typ == 4: r.str()
         return n
     params()
-    for _ in range(r.u8()):   # techniques
+    for _ in range(read_cnt()):   # techniques
         r.str(); no_annotations()
-        for _ in range(r.u8()):   # passes: name, annotations, vertex / pixel shader index, then the blend, depth-stencil and rasterizer states when present
-            r.str(); no_annotations(); v, f = r.u8(), r.u8()
+        for _ in range(read_cnt()):   # passes: name, annotations, vertex / pixel shader index, then the blend, depth-stencil and rasterizer states when present
+            r.str(); no_annotations()
+            v, f = (r.un('<i'), r.un('<i')) if v10 else (r.u8(), r.u8())
+            if v10:
+                v = 255 if v < 0 else v
+                f = 255 if f < 0 else f
             if v != 255 and v >= len(out) or f != 255 and f >= len(out): red(f'{label} MGFX @{p:#x}: a pass names shader {v} / {f} of {len(out)}')
             for n in (18, 25, 12):
                 if r.u8(): r.raw(n)
+    if v10:
+        if r.raw(4) != b'MGFX': red(f'{label} MGFX @{p:#x}: tail mismatch (expected b\'MGFX\')')
     # in Bastion's 24 XNB files the length in front of 'MGFX' (EffectReader reads that many bytes) runs to the file's end, about 0xff0 bytes past the effect, all zeros
-    if r.p > len(d) or label.endswith('.xnb') and d[r.p:].strip(b'\0'): red(f'{label} MGFX @{p:#x}: the effect ends at {r.p:#x}, the file at {len(d):#x}')
+    elif r.p > len(d) or label.endswith(('.xnb', '.zxnb')) and d[r.p:].strip(b'\0'): red(f'{label} MGFX @{p:#x}: the effect ends at {r.p:#x}, the file at {len(d):#x}')
     return out
 
 def mgfx_shaders(d, label):
     out = []
     for m in re.finditer(MGFX, d): out += mgfx_effect(d, m.start(), label) or []
-    if label.endswith('.xnb') and b'EffectReader' in d[:0x200] and not out: red(f'{label}: an XNB effect without an MGFX version 5 or 8 effect of NVN shaders')
+    if label.endswith(('.xnb', '.zxnb')) and b'EffectReader' in d[:0x200] and not out: red(f'{label}: an XNB effect without an MGFX version 5, 8 or 10 effect of NVN shaders')
     return out
 
 def rel_targets(img):
@@ -3046,6 +3055,10 @@ def scan_file_in(args):
         return rel, uniq_keys(found), var_pairs(found), trees
     if head[:4] != ZSTD_MAGIC and head[4:8] in (ZSTD_MAGIC, LZ4_FRAME_MAGIC): d = unsized(d, '/' + rel)   # HAL's .cmp containers (Kirby and the Forgotten Land: 7,201 of them, 5,121 zstd frames with 19,364 BNSH inside and 2,080 LZ4 frames). Read raw, the split found 121 shaders and the game asked for 900 it did not have ("[RED] shader ... is not in the shader map")
     if d[:4] == b'Yaz0': d = yaz0(d, '/' + rel)
+    if rel.endswith('.zxnb'):
+        try: d = zlib.decompress(d, -15)
+        except zlib.error: pass
+        if b'EffectReader' not in d: return rel, {}, set(), {}
     if d[:3] == b'XNB' and d[4] == 5 and d[5] & 0xC0 and len(d) > 14:   # a compressed XNB (Stardew Valley: 3,535 LZ4 files, 8 LZX): only effects (EffectReader) carry MGFX shaders, and for LZX the reader names sit in the first block, so it decides whether the rest is worth decoding
         if d[5] & 0x80:
             head_d = xnb_decompress(d, first_block=True)
