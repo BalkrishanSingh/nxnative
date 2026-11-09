@@ -1,0 +1,38 @@
+# Game profile of Castle Crashers Remastered (Switch, update 1.0.7 = v458752). Plays on the Mac at 60 fps with sound and controller/keyboard input
+# Format: see dm/games/README.md
+# MonoGame for the Switch (Sickhead Games' BRUTE runtime) into main and sdk, NVN graphics, AudioRenderer sound, SDK 9.3.1.
+
+# ---- Identity ----
+title_id	010001300D14A000
+program_id	010001300D14A000
+
+# ---- App ----
+name	Castle Crashers Remastered
+ipa	CastleCrashersRemastered.ipa
+app_category	public.app-category.games
+
+# ---- Versions ----
+build	v458752	1.0.7	main=5e85f631bfa6930ef9ca8246e40d2e83	sdk=ad3fdfbd62a5f4b082d385ffe420d440
+package	v458752
+shader_versions	v458752
+
+# ---- Files ----
+# every module main imports from
+modules	main sdk
+romfs_marker	sounds/sounds.audiopak
+zip_store	.audiopak:.opus:.pak:.metallib
+
+# ---- Memory ----
+# main sets a heap of at most the pool − 64 MB: a 3328 MB heap region
+mem_reserve	0x100000000
+mem_alias	0x10000000
+mem_stack	0x10000000
+app_pool	0xCD500000
+# the NPDM declares 0 MB of system resource: IsVirtualAddressMemoryEnabled is false, as on Horizon (Big Brain Academy: Brain vs. Brain sets a heap only then)
+sys_resource	0x0
+
+# ---- Shader split ----
+shader_groups	/bsps/=bsps /game/=game /levels/=levels /music/=music /shaders/=shaders /hdvib/=hdvib /fonts/=fonts /sounds/=sounds /textures/=textures
+shader_note	Castle Crashers Remastered shaders
+shader_quad_prim_id	on
+

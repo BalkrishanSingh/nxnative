@@ -49,6 +49,7 @@ BF_WANT_FILE = str(GAME.table('bf_want.tsv'))
 BF_WANT = {line.strip() for line in open(BF_WANT_FILE) if line.strip() and not line.lstrip().startswith('#')} if os.path.exists(BF_WANT_FILE) else set()
 DUAL_WANT_FILE = str(GAME.table('dual_want.tsv'))   # pixel shaders a pipeline blends with their output 1 as the second source (see fs_dual), produced by the host (DM_NVN_DUAL_WANT)
 DUAL_WANT = {line.split()[0] for line in open(DUAL_WANT_FILE) if line.strip() and not line.lstrip().startswith('#')} if os.path.exists(DUAL_WANT_FILE) else set()
+QUAD_PRIM_ID = GAME.get('shader_quad_prim_id', 'off') == 'on'
 XC = ['--msl', '--msl-version', '20300', '--msl-argument-buffers', '--msl-texture-buffer-native', '--msl-pad-fragment-output']
 # spirv-cross writes the translator's FMin / FMax / FClamp as fast::min / max / clamp, whose result for a NaN operand is the GPU's choice; Maxwell's FMNMX returns the other operand
 # and its saturation gives 0, as Metal's precise:: functions (IEEE fmin / fmax) do on every GPU. The M4 Pro's fast ones happen to agree, an A20 Pro's do not: Super Mario Galaxy 2's
@@ -428,6 +429,23 @@ def frag_z_snap(msl):
     body = f'\n    float {ZSNAP_WIDTH} = fwidth(gl_FragCoord.z);' + '\n'.join(lines)   # in uniform control flow, before anything the body does
     msl = msl[:first] + body + msl[end - 1:]
     return msl.replace('using namespace metal;\n', 'using namespace metal;\n\n' + ZSNAP, 1), n
+
+def quad_prim_id(msl):
+    """Quads emulated as two triangles assign [[primitive_id]] per triangle; gl_PrimitiveID is per quad (gl_PrimitiveID >> 1)"""
+    if '[[primitive_id]]' not in msl: return msl
+    e = dmsh_side.entry(msl, 'main0')
+    if not e: return msl
+    var = None
+    for p in e['params']:
+        m = re.search(r'(\w+)\s*\[\[\s*primitive_id\s*\]\]', p)
+        if m:
+            var = m.group(1)
+            break
+    if not var: return msl
+    brace = msl.find('{', e['head'])
+    if brace < 0: return msl
+    return msl[:brace + 1] + f'\n    {var} = {var} >> 1;' + msl[brace + 1:]
+
 STORE = shader_cache.Store(os.environ.get('DMSH_CAS', os.path.join(cache_root, 'cas.db')))
 atexit.register(STORE.close)   # folds its log into the one file
 CAS_LOCKS, CAS_LOCKS_GUARD = {}, threading.Lock()
@@ -1663,7 +1681,9 @@ def finish(key, w, j, c1):
     except ValueError as e: return 'pool rewrite failed', str(e)[:160], None
     src = dmsh_wide.wide_loads(src)   # storage words the translator split, read whole again (see dmsh_wide.py)
     src = border_emu(src)   # border colours Metal lacks (see border_emu)
-    if j['stage'] == 'ps': src = frag_z_snap(src)[0]   # gl_FragCoord.z against a depth of its own surface (see frag_z_snap)
+    if j['stage'] == 'ps':
+        src = frag_z_snap(src)[0]   # gl_FragCoord.z against a depth of its own surface (see frag_z_snap)
+        if QUAD_PRIM_ID: src = quad_prim_id(src)
     open(msl, 'w').write(src)
     first, spill = [], 0
     mesh = j.get('mesh_stage')

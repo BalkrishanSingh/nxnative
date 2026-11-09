@@ -1105,6 +1105,15 @@ The replay on Metal (`dm/gfx/nvn/nvn_mtl.m`) and the Vulkan and OpenGL layers. E
 - **Check:** `t_image_primitive_id` draws four full-screen triangles that store into the layer of their primitive ID through the host's draw path (an attachment-less pass, a metallib loaded as game shaders are). Each of the four layers holds its own primitive's value; without the flag, layers 1 to 3 stay empty (macOS 27.0.1, M3 Pro). `test_pso_offline.py` checks that such a pair is left out.
 - **Found on:** [Fire Emblem Fortune's Weave](../../dm/games/04007EF01F8AE000/README.md): `b6726be4afc44691`.
 
+### `[[primitive_id]]` when emulating quads with triangles
+
+- **Symptom:** 2D sprites, font glyphs, and UI elements appear diagonally split or torn, with one triangle displaying correctly and the other displaying garbage textures or white silhouettes. Text glyphs flicker.
+- **Cause:** Metal lacks native quad primitives (`NVN_DRAW_PRIMITIVE_QUADS`), so the host emulates quads by expanding each quad into two triangles. NVN and OpenGL define `gl_PrimitiveID` to increment per primitive (once per quad for `NVN_DRAW_PRIMITIVE_QUADS`), whereas Metal's hardware rasterizer increments `[[primitive_id]]` per triangle. Pixel shaders that use `gl_PrimitiveID` to index per-sprite storage buffers (such as Sickhead's BRUTE MonoGame engine) receive an odd index for the quad's second triangle ($2Q+1$), addressing the next sprite's descriptor instead of the current one ($2Q$).
+- **Fix:** `shader_quad_prim_id` in `game.tsv` directs `dmsh_build.py` to shift the fragment entry point's primitive ID variable by 1 (`>> 1`) when reading `[[primitive_id]]`, restoring the expected quad index.
+- **Check:** `dm/gfx/tests/test_dmsh_quad_prim_id.py` checks that synthetic MSL functions reading `[[primitive_id]]` have the shift inserted, while shaders without it remain untouched.
+- **Found on:** [Castle Crashers Remastered](../../dm/games/010001300D14A000/README.md).
+
+
 ### Every start after play captures the whole pipeline archive again
 
 - **Symptom:** the start after a play session spends minutes in the prepare step ("Preparing shaders") with MTLCompilerService at 700-980% CPU, and only a few bases are new: `pipeline prepare: 30838 lines (…) in 713.42 s on 10 workers before the first frame, progress screen shown; bases 262 compiled, 8346 from the archive, 637 reused`, then `pipeline archive compacted: 14 files of bases with a vertex layout gave 8543 bases to the files just written and were removed`.

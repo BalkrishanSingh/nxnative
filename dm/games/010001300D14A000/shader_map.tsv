@@ -1,0 +1,21 @@
+# kind: evidence  Castle Crashers Remastered shaders (GLSLC in RomFS + main) → control section + code area keys (dm/gfx/tools/shader_split.py)
+# column 5 records where each key first appears; no PC shader pairing supplied
+package	index	stage	dm_ctl_sha16	source
+ps_shaders.bin	0	pixel	b517a46d1d15888b	/shaders/blacknwhite.cso#GLSLC@0x0
+ps_shaders.bin	1	pixel	b8c045d073d86b75	/shaders/bloom.cso#GLSLC@0x0
+ps_shaders.bin	2	pixel	851dfaf21af36613	/shaders/blur.cso#GLSLC@0x0
+ps_shaders.bin	3	pixel	f276533c975648ea	/shaders/experiment.cso#GLSLC@0x0
+ps_shaders.bin	4	pixel	4eff81eef234aed1	/shaders/font.cso#GLSLC@0x0
+vs_shaders.bin	0	vertex	c3304fe8882b5914	/shaders/generic.cso#GLSLC@0x0
+ps_shaders.bin	5	pixel	70d7dae9d7e5186a	/shaders/glow.cso#GLSLC@0x0
+ps_shaders.bin	6	pixel	9de260f2379b57f4	/shaders/greyscale.cso#GLSLC@0x0
+ps_shaders.bin	7	pixel	346ba1ea74a3f23a	/shaders/heat.cso#GLSLC@0x0
+ps_shaders.bin	8	pixel	c6d74c78819e1748	/shaders/inverted.cso#GLSLC@0x0
+ps_shaders.bin	9	pixel	e0e6186a7317ca71	/shaders/mask.cso#GLSLC@0x0
+ps_shaders.bin	10	pixel	0a4fc0c71ed674ee	/shaders/outline.cso#GLSLC@0x0
+vs_shaders.bin	1	vertex	e689035c70d7dd3f	/shaders/overlay.cso#GLSLC@0x0
+ps_shaders.bin	11	pixel	ab00b47e02c93638	/shaders/rasterhack.cso#GLSLC@0x0
+ps_shaders.bin	12	pixel	befda3a435bc92f9	/shaders/sobeledge.cso#GLSLC@0x0
+ps_shaders.bin	13	pixel	508ca9114e43b588	/shaders/sprite.cso#GLSLC@0x0
+ps_shaders.bin	14	pixel	c972f1df569a6c70	/shaders/vertexcolorfill.cso#GLSLC@0x0
+ps_shaders.bin	15	pixel	cbfad770bdc0d0c4	/shaders/water.cso#GLSLC@0x0

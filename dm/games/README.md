@@ -69,6 +69,7 @@ One row per profile; the notes are each profile's `README.md`.
 | [Blasphemous 2](010040801A4C8000/README.md) | `010040801A4C8000` | 1.0.8 | 15.3.2 | Unity 2021.3.20f1 IL2CPP, FMOD | NVN |
 | [Brain Memory Training Academy](0100F5D01DA3A000/README.md) | `0100F5D01DA3A000` | 1.0.0 (base) | 16.2.4 | Unity 2022.3.5f1 IL2CPP | NVN |
 | [Captain Toad: Treasure Tracker](01009BF0072D4000/README.md) | `01009BF0072D4000` | 1.4.2 | 8.2.0 | Nintendo EPD Tokyo (`al` over sead / agl) | NVN |
+| [Castle Crashers Remastered](010001300D14A000/README.md) | `010001300D14A000` | 1.0.7 | 9.3.1 | MonoGame (BRUTE) | NVN |
 | [Castlevania: Belmont's Curse](0100BA4026E94000/README.md) | `0100BA4026E94000` | 1.1.0 | 19.3.16 | Unity 2022.3.62f2 IL2CPP, FMOD | NVN |
 | [Catherine: Full Body](0100BF00112C0000/README.md) | `0100BF00112C0000` | 1.0.1a | 8.2.1 | Atlus GFD (CRI middleware) | NVN |
 | [Celeste](01002B30028F6000/README.md) | `01002B30028F6000` | 1.4.1.1 | 15.3.2 | MonoGame (C# → C++ by BRUTE) | NVN |
@@ -249,6 +250,7 @@ One row per profile; the notes are each profile's `README.md`.
 | `vconv_range` | `on` / `off` (the default): vertex attributes the replay converts on the CPU (integer shader inputs fed float-type formats and the like, `vconv_bind` in `nvn_mtl.m`) are converted only over the vertices each draw reads (first / count, or the smallest and largest index of a direct indexed draw, kept while the index pages stay unwritten) instead of the whole bound range. Age of Calamity binds whole mesh pools: in a battle that was millions of vertices a frame. Indirect draws, per-instance streams and indices with a GPU write queued on them keep the whole range. `DM_NVN_VCONV_CHECK=1` scans the indices again at every reuse and reports differences; `DM_NVN_VCONV_RANGE=0` / `1` overrides it |
 | `shader_key_skip` | `<offset>+<length>` (none by default): control-section bytes every shader key hashes as zeros, in `shader_split.py` (`key_ctl`) and the host (`hle_nvn.c` `keys_hash`), for an engine that shares one control section among shaders that differ only there. Batman: Arkham Knight: `0x770+0x78`, GLSLC's compile information (+0x778..+0x791 and +0x7d0..+0x7e7); without it the game asks for shaders the map does not have, each the control section of one record with the code area of another. It must stay clear of `+0x700..+0x75f`, which the tools read; it is a shader chain input, as every `shader_*` key |
 | `shader_groups`, `shader_note` | `shader_split.py` source groups and the map header note (Engage: `engine` for `data.unity3d` and `Resources/`, `assets` for the Addressables bundles). Both are shader inputs, the note too: changing either one, even by a word, builds every shader of the game again. Keep them as they are when a provisional profile moves into `dm/games` |
+| `shader_quad_prim_id` | `on` / `off` (the default): shifts `gl_PrimitiveID` by 1 (`>> 1`) in fragment shaders reading `[[primitive_id]]`, for engines that draw quads (`NVN_DRAW_PRIMITIVE_QUADS`) emulated via triangles on Metal (Castle Crashers Remastered). |
 
 ### What the game files decide at every build
 
