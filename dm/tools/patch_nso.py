@@ -44,7 +44,7 @@ FAR, FRONT = NEAR_PATCH_OFF > 0x7000000, 0x2000000
 # A text segment that ends within 32 MB of the ±128 MB reach (Monster Hunter Rise: 125.3 MB of text) puts the patch area right before the base instead. Its stubs follow the sites in address
 # order, so the last site's stub ends up about as far from it as the text is long. The first pass tries the gap that keeps every site in reach; when the patch area does not fit there
 # (Monster Hunter Rise: 3.6 MB), the rewriter runs again with exactly the size it needs (DM_PATCH_FRONT, set only by that rerun) and B() checks every branch
-BIG_TEXT = FAR and MOD.text_end + FRONT > 0x8000000 - 0x10000
+BIG_TEXT = FAR and MOD.text_end + FRONT > REACH - 0x10000
 # A text segment longer than the reach itself (EA SPORTS FC 27: 185.6 MB of text in main) leaves no gap before the base from which a B reaches its end, so the patch area is split in
 # two (TWO): the front area before the base takes the sites below SPLIT, the back area right after the image (after bss, the key page and the frame step page, at BACK_OFF) takes
 # the others. A site's stubs, and their branches back to it, stay in the area it belongs to; SPLIT keeps 1 MB of margin for a stub's exits past its site (a window's targets, a
@@ -72,7 +72,7 @@ if FAR:
     KEY_PAGE_OFF = (len(IMG) + bss + 0x3FFF) & ~0x3FFF
     IMAGE_SIZE, PATCH_OFF = KEY_PAGE_OFF + 0x4000, -FRONT
     BACK_OFF = (KEY_PAGE_OFF + 0x8000 + 0xFFFF) & ~0xFFFF if TWO else 0   # after the key page and the frame step page FRAME_STEP may take
-    assert not TWO or BACK_OFF - 0x8000000 + 0x100000 == BACK_MIN, 'BACK_MIN and BACK_OFF disagree'
+    assert not TWO or BACK_OFF - REACH + MARGIN == BACK_MIN, 'BACK_MIN and BACK_OFF disagree'
 else:
     KEY_PAGE_OFF = (len(IMG) + 0x3FFF) & ~0x3FFF
     IMG.extend(bytes(0x4000))

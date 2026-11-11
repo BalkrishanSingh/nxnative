@@ -58,9 +58,6 @@ def mix_in(h: bytes, s: bytes) -> bytes:
         out = bytearray(quad_rounds(bytes(out))); pos += amount
     return bytes(out)
 
-def mix_in_filepath(filepath: bytes, h: bytes) -> bytes:
-    return mix_in(h, filepath)
-
 def keyed_hashing(filepath: bytes, key: bytes) -> bytes:
     out = bytearray()
     for idx in range(0, len(filepath), 64):

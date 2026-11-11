@@ -16,7 +16,7 @@ Update 1.28.0 (v524288) over the base game, SDK 13.3.0. Custom C++ engine (BlitW
 
 ## Memory
 
-- **Resolved: crash at `main+0x30b150` (SIGSEGV, addr `0x400000008`) when address region allocation failed.** Spelunky 2's engine sets up five 4 GB-spaced heaps by calling `nn::os::AllocateAddressRegion(0x500000000)` (20 GB), requiring `(uint32_t)ptr < 0x7f800000`. With `mem_reserve 0x200000000` (8 GB) and `mem_alias 0x100000000` (4 GB), `RESERVE - DM_GAME_MEM_ALIAS = 4 GB` aligns `g_alias` on an exact 4 GB boundary, placing Region 0 at offset `0x04000000 < 0x7f800000` so the first region attempt initializes all 5 heaps (`Success: 1`). See [4 GB-aligned alias region for multi-gigabyte fixed-offset heaps](../../../docs/reference/memory.md#4-gb-aligned-alias-region-for-multi-gigabyte-fixed-offset-heaps).
+- **Resolved: crash at `main+0x30b150` (SIGSEGV, addr `0x400000008`) when address region allocation failed.** Spelunky 2's custom engine sets up five 4 GB-spaced heaps via `nn::os::AllocateAddressRegion(0x500000000)` (20 GB), requiring Region 0 to satisfy `(uint32_t)ptr < 0x7f800000`. Handled by 4 GB alignment of `g_alias`; see [4 GB-aligned alias region for multi-gigabyte fixed-offset heaps](../../../docs/reference/memory.md#4-gb-aligned-alias-region-for-multi-gigabyte-fixed-offset-heaps).
 
 ## Files and shaders
 
@@ -27,6 +27,17 @@ Update 1.28.0 (v524288) over the base game, SDK 13.3.0. Custom C++ engine (BlitW
 ## Frame rate
 
 - 60 fps on Mac: runs steady at 60 Hz present interval.
+
+## On the Mac
+
+- Start with `python3 scripts/build_ipa_from_nsp.py /path/to/Spelunky2` or run directly via `DM_GAME=01007EC013ABC000 ./01007EC013ABC000_build/Spelunky2.app/Contents/MacOS/Spelunky2`.
+- Controls: Arrow keys / WASD for movement, Z / Space for jump, X for whip/action, C for bomb, Shift for run/enter doors. Connected controllers work via standard macOS HID.
+- Tested: Boot to title, profile setup, menu navigation, character selection, adventure mode entry into World 1 (Mines) 1-1 through 1-4 at continuous 60 fps.
+
+## Open
+
+- iOS device testing: Mac gameplay verified at 60 fps; iOS IPA build not yet sideloaded or tested on physical iPhone/iPad hardware.
+- Full game playthrough: Validated through World 1 Mines; later areas (Jungle, Volcana, Olmec, Tide Pool, Temple, Neo Babylon, Sunken City, Cosmic Ocean) pending further play sessions.
 
 ## Found on this game
 
