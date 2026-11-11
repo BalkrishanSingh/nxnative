@@ -1,0 +1,37 @@
+# kind: evidence  Spelunky shaders (GLSLC in RomFS + main) → control section + code area keys (dm/gfx/tools/shader_split.py)
+# column 5 records where each key first appears; no PC shader pairing supplied
+package	index	stage	dm_ctl_sha16	source
+ps_data.bin	0	pixel	d90b5a38254b4bcf	/Data/Shaders/NX/passpshader_activenormalP.nvn#GLSLC@0x0
+ps_data.bin	1	pixel	ac8209de0ce67509	/Data/Shaders/NX/passpshader_basicP.nvn#GLSLC@0x0
+ps_data.bin	2	pixel	f3ca6f701e117a5f	/Data/Shaders/NX/passpshader_basicPointP.nvn#GLSLC@0x0
+ps_data.bin	3	pixel	ab28f01a1e72e253	/Data/Shaders/NX/passpshader_basicWarpP.nvn#GLSLC@0x0
+ps_data.bin	4	pixel	8e588d6f4e9f8983	/Data/Shaders/NX/passpshader_blurP.nvn#GLSLC@0x0
+ps_data.bin	5	pixel	61c0d071a995573b	/Data/Shaders/NX/passpshader_emitterNormalP.nvn#GLSLC@0x0
+ps_data.bin	6	pixel	a0f7b832f463256b	/Data/Shaders/NX/passpshader_emitterP.nvn#GLSLC@0x0
+ps_data.bin	7	pixel	b64147feb5971e6a	/Data/Shaders/NX/passpshader_emitterWarpP.nvn#GLSLC@0x0
+ps_data.bin	8	pixel	50370bc88818e613	/Data/Shaders/NX/passpshader_fontP.nvn#GLSLC@0x0
+ps_data.bin	9	pixel	c4fe9e3e3b194145	/Data/Shaders/NX/passpshader_fullP.nvn#GLSLC@0x0
+ps_data.bin	10	pixel	8e43ce7ef4bc9073	/Data/Shaders/NX/passpshader_fullP_nofade.nvn#GLSLC@0x0
+ps_data.bin	11	pixel	766bdee0cef40e53	/Data/Shaders/NX/passpshader_fullP_nofade_rewind.nvn#GLSLC@0x0
+ps_data.bin	12	pixel	e7875fe06180bb7d	/Data/Shaders/NX/passpshader_iceblockP.nvn#GLSLC@0x0
+ps_data.bin	13	pixel	55f78dee6c71ec29	/Data/Shaders/NX/passpshader_lightP.nvn#GLSLC@0x0
+ps_data.bin	14	pixel	6c166bfe249990d2	/Data/Shaders/NX/passpshader_lightlistP.nvn#GLSLC@0x0
+ps_data.bin	15	pixel	c05311b5e6d23cbf	/Data/Shaders/NX/passpshader_lightshadowlistP.nvn#GLSLC@0x0
+ps_data.bin	16	pixel	57ced23f539b92c7	/Data/Shaders/NX/passpshader_normalP.nvn#GLSLC@0x0
+ps_data.bin	17	pixel	0e7888de8184ee83	/Data/Shaders/NX/passpshader_objectP.nvn#GLSLC@0x0
+ps_data.bin	18	pixel	d39de8d848dd69d1	/Data/Shaders/NX/passpshader_objectP2.nvn#GLSLC@0x0
+ps_data.bin	19	pixel	ef760c74a6cfead4	/Data/Shaders/NX/passpshader_partsP.nvn#GLSLC@0x0
+ps_data.bin	20	pixel	38ca2405b2c6ad77	/Data/Shaders/NX/passpshader_reflectP.nvn#GLSLC@0x0
+ps_data.bin	21	pixel	634b73809c1337d7	/Data/Shaders/NX/passpshader_shadowP.nvn#GLSLC@0x0
+ps_data.bin	22	pixel	0b94751dec78eaa7	/Data/Shaders/NX/passpshader_shadowlayerP.nvn#GLSLC@0x0
+ps_data.bin	23	pixel	4c7e7de6ed2a169f	/Data/Shaders/NX/passpshader_shinyBGP.nvn#GLSLC@0x0
+ps_data.bin	24	pixel	2e8aa6d28dc543d4	/Data/Shaders/NX/passpshader_shinyP.nvn#GLSLC@0x0
+ps_data.bin	25	pixel	79c1f01d1c0833bf	/Data/Shaders/NX/passpshader_waterwarpP.nvn#GLSLC@0x0
+vs_data.bin	0	vertex	6e5bf9d269e321e9	/Data/Shaders/NX/passvshader_dropShadowBufferV.nvn#GLSLC@0x0
+vs_data.bin	1	vertex	a9fb8ef5b6d05139	/Data/Shaders/NX/passvshader_dropShadowV.nvn#GLSLC@0x0
+vs_data.bin	2	vertex	f5c4c8ac1663bf9b	/Data/Shaders/NX/passvshader_levelLV.nvn#GLSLC@0x0
+vs_data.bin	3	vertex	85fffd8e3d7e7f73	/Data/Shaders/NX/passvshader_levelV.nvn#GLSLC@0x0
+vs_data.bin	4	vertex	0eb195003e589e83	/Data/Shaders/NX/passvshader_mainV.nvn#GLSLC@0x0
+vs_data.bin	5	vertex	3f09f346304c3e69	/Data/Shaders/NX/passvshader_partV.nvn#GLSLC@0x0
+vs_data.bin	6	vertex	9e27b2b5e868713a	/Data/Shaders/NX/passvshader_shadowBufferV.nvn#GLSLC@0x0
+vs_data.bin	7	vertex	754944d3228777a2	/Data/Shaders/NX/passvshader_shadowV.nvn#GLSLC@0x0

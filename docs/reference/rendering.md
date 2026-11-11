@@ -1757,3 +1757,12 @@ Digimon Story Cyber Sleuth: Complete Edition (Media.Vision's MVGL engine, SDK 6.
 - **Fix:** the present reports the shape of the frame it draws ([the layer's](#a-crop-only-picks-texels-the-picture-has-the-layers-shape)) whenever its width / height changes (`nvn_mtl.m` `present_now` → `front.h` `front_picture_shape`; every graphics API presents there). The iOS front end lays the game's view out in that shape (`DmLayout.h` takes it as a parameter: the overlay, the split, Fill and the TV alike), so a 1.43:1 picture fills a 1.43:1 screen in Fit and touches are normalized on the picture as drawn; the Mac maps the mouse on the picture's own rectangle. A 16:9 game reports 16:9 and keeps its layout, and a size change of the same shape (1280x720 handheld, 1920x1080 docked) is not reported.
 - **Check:** the [Duo harness](../../dm/ios/tests/duo/README.md) tests the taller picture in Fit, in Fill and on a wider screen, and the production root view following a reported shape and returning to 16:9. Not yet run on a device.
 - **Found on:** [Breath of the Wild](../../dm/games/01007EF00011E000/README.md#screen-shape-dm_screen_aspect-current) and [Animal Crossing: New Horizons](../../dm/games/01006F8002326000/README.md#screen-shape-dm_screen_aspect-current) with `DM_SCREEN_ASPECT=1.43`.
+
+### nvnDeviceApplyDeferredFinalizes
+
+- **Symptom:** game aborts during device initialization with `[RED] NVN unimplemented function called: nvnDeviceApplyDeferredFinalizes`.
+- **Cause:** SDK 11.4 NVN device initialization invokes `nvnDeviceApplyDeferredFinalizes` to process deferred state finalization flags on the device object.
+- **Fix:** implement `nvnDeviceApplyDeferredFinalizes` as a semantic no-op in `dm/gfx/nvn/hle_nvn.c`. On Metal, finalization state requires no deferred hardware synchronization.
+- **Check:** `dmhost` boots Spelunky without error and passes `t_nvn` (298 checks pass).
+- **Found on:** [Spelunky](../../dm/games/0100710013ABA000/README.md).
+

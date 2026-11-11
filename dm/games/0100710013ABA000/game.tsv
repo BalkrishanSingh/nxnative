@@ -1,0 +1,35 @@
+# Game profile of Spelunky (Switch, update 1.0.5 = v327680; base game v0). Plays on the Mac at 60 fps with sound.
+# Format: see dm/games/README.md
+
+# ---- Identity ----
+title_id	0100710013ABA000
+program_id	0100710013ABA000
+
+# ---- App ----
+name	Spelunky
+ipa	Spelunky.ipa
+app_category	public.app-category.games
+
+# ---- Versions ----
+build	v327680	1.0.5	main=305059e46777fd54b04bcf03b900a584	sdk=b39add63421be525d352e576dab438d3
+package	v327680
+shader_versions	v327680
+
+# ---- Files ----
+# every module main imports from
+modules	main sdk
+romfs_marker	Data/Textures/alltex.wad
+zip_store	.ogg:.png:.wad:.metallib
+
+# ---- Memory ----
+# main sets a heap of at most the pool − 64 MB: a 3328 MB heap region
+mem_reserve	0x100000000
+mem_alias	0x10000000
+mem_stack	0x10000000
+app_pool	0xCD500000
+# the NPDM declares 0 MB of system resource: IsVirtualAddressMemoryEnabled is false, as on Horizon (Big Brain Academy: Brain vs. Brain sets a heap only then)
+sys_resource	0x0
+
+# ---- Shader split ----
+shader_groups	/Data/=data
+shader_note	Spelunky shaders
