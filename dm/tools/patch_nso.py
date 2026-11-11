@@ -41,6 +41,9 @@ bss = MOD.bss
 # The key page stays after bss (the patch area reaches it through ADRP, ±4 GB). Modules below the limit produce output byte-identical to before
 NEAR_PATCH_OFF = ((((len(MOD.image) + bss + 0x3FFF) & ~0x3FFF) + 0x4000 + 0xFFFF) & ~0xFFFF)   # where an appended patch area would start (as in the else branch below)
 FAR, FRONT = NEAR_PATCH_OFF > 0x7000000, 0x2000000
+REACH = 0x8000000        # 128 MB: direct B / BL reach
+MARGIN = 0x100000        # 1 MB margin for stub exits
+SPLIT_THRESHOLD = REACH - 2 * MARGIN  # 126 MB: minimum limit before front and back areas cannot overlap
 # A text segment that ends within 32 MB of the ±128 MB reach (Monster Hunter Rise: 125.3 MB of text) puts the patch area right before the base instead. Its stubs follow the sites in address
 # order, so the last site's stub ends up about as far from it as the text is long. The first pass tries the gap that keeps every site in reach; when the patch area does not fit there
 # (Monster Hunter Rise: 3.6 MB), the rewriter runs again with exactly the size it needs (DM_PATCH_FRONT, set only by that rerun) and B() checks every branch
@@ -52,9 +55,6 @@ BIG_TEXT = FAR and MOD.text_end + FRONT > REACH - 0x10000
 # SPLIT is also no lower than the lowest site the back area reaches with the same margin (BACK_MIN): when ro, data and bss after the text are large (Hello Kitty Party Land: 151.8 MB
 # of text, 98 MB more before BACK_OFF), a 16 MB front area would hand the back area sites more than 128 MB below it, so the front area's first pass takes the gap up to BACK_MIN instead.
 # When a module exceeds 256 MB (Spelunky 2: 346 MB text with a 337 MB internal data block), the two areas cannot overlap; SPLIT = BACK_MIN reaches as long as no rewrite site falls in the middle gap.
-REACH = 0x8000000        # 128 MB: direct B / BL reach
-MARGIN = 0x100000        # 1 MB margin for stub exits
-SPLIT_THRESHOLD = REACH - 2 * MARGIN  # 126 MB: minimum limit before front and back areas cannot overlap
 TWO = BIG_TEXT and MOD.text_end > REACH - 0x10000
 BACK_MIN = 0   # TWO: BACK_OFF (set below) less the reach, plus the margin
 if TWO:
