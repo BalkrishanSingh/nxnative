@@ -152,7 +152,7 @@ def translate(src, stage, key, tmp):
     if r.returncode: return 'spirv-cross: ' + r.stderr.strip()[:300]
     m = open(msl).read()
     # Varyings by name: the out struct of a vertex shader and the in struct of a fragment shader (stage_in members of a vertex shader are [[attribute(n)]])
-    m = re.sub(r'(\b(\w+)\s+\[\[)user\(locn\d+\)', lambda x: f'{x.group(1)}user({x.group(2)})', m)
+    m = re.sub(r'(\b(\w+)\s+\[\[)user\(locn\d+\)', lambda x: f'{x.group(1)}user({re.sub(r"^(?:vs_out_|fs_in_|vs_in_|fs_out_)", "", x.group(2))})', m)
     m = re.sub(r'\bfast::(min|max|clamp)\(', r'precise::\1(', m)   # a NaN operand gives the other one, as on the Switch's GPU (vk_shaders.py PRECISE)
     open(msl, 'w').write(m)
     f = []
@@ -164,10 +164,12 @@ def translate(src, stage, key, tmp):
     bools = {n for n in re.findall(r'\buniform\s+(?:(?:lowp|mediump|highp)\s+)?bool\s+(\w+)\s*;', pre)}
     for u in refl.get('ubos', []):
         t = refl['types'][u['type']]
-        if t['name'] != 'gl_DefaultUniformBlock': return f'uniform block {t["name"]} is not the default block'
-        f.append(f'b:{u["binding"]}:{u["block_size"]}')
-        e = uni_members(refl, t['members'], '', 0, f, bools)
-        if e: return e
+        if t['name'] == 'gl_DefaultUniformBlock':
+            f.append(f'b:{u["binding"]}:{u["block_size"]}')
+            e = uni_members(refl, t['members'], '', 0, f, bools)
+            if e: return e
+        else:
+            f.append(f'B:{t["name"]}={u["binding"]}:{u["block_size"]}')
     for t in refl.get('textures', []):
         if t.get('array'): return f'sampler array {t["name"]}'
         f.append(f't:{t["name"]}={t["binding"]}:{t["type"]}')

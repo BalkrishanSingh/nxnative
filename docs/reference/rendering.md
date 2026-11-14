@@ -1898,6 +1898,13 @@ Digimon Story Cyber Sleuth: Complete Edition (Media.Vision's MVGL engine, SDK 6.
 - A GLSL `bool` is a `uint` in the SPIR-V block; `gl_shaders.py` keeps the declared type, as LÖVE's `Shader:send` takes only a boolean for a bool.
 - **Found on:** [Digimon Story Cyber Sleuth: Complete Edition](../../dm/games/010014E00DB56000/README.md) (no `glBindAttribLocation`); [Balatro](../../dm/games/0100CD801CE5E000/README.md): LÖVE binds VertexPosition, VertexTexCoord, VertexColor and ConstantColor to 0–3 with `glBindAttribLocation` before each link, keeps VertexColor and ConstantColor as disabled arrays and sets their values with `glVertexAttrib4f` (the draw colour); it lists uniforms with `glGetActiveUniform` (types as GL enums, arrays as `name[0]`) and reads their initial values back with `glGetUniformfv` / `iv`.
 
+### GL uniform buffer objects, sampler objects and multiple render targets
+
+- **Symptom:** draws skipped with `[RED] program <X>: a shader is missing from the library, its draws are skipped` or `[RED] no pipeline for program <X>`, resulting in a blank screen while audio and game logic loop normally.
+- **Cause:** the offline shader translator aborted on non-default uniform blocks (`uniform OrthoBlock { mat4 m; } ortho;`), and varying names within interface blocks generated mismatched MSL `user(...)` attributes across vertex (`vs_out_`) and fragment (`fs_in_`) stages, failing Metal pipeline reflection. In the host OpenGL layer, uniform buffer bindings (`glBindBufferBase(GL_UNIFORM_BUFFER)`, `glGetUniformBlockIndex`, `glUniformBlockBinding`), sampler objects (`glGenSamplers`, `glBindSampler`, `glSamplerParameteri`), and multiple color attachments (`colorAttachments[0..3]`) were unimplemented.
+- **Fix:** `gl_shaders.py` records named uniform blocks (`B:<name>=<binding>:<size>`) and strips stage prefixes from interface block varyings. `hle_gl.m` implements `GL_UNIFORM_BUFFER` binding slots, uniform block mapping, dedicated sampler state objects cached via `MTLSamplerState`, multiple render target attachment tracking with dual color outputs, per-attachment color masks (`glColorMaski`) and blend enables (`glEnablei`/`glDisablei`), and multi-buffer clearing (`glClearBufferfv`).
+- **Found on:** [N++](../../dm/games/01000D5005974000/README.md).
+
 ### GL shaders and programs deleted while in use
 
 - **Symptom:** a program whose shaders were deleted after `glAttachShader` and before `glLinkProgram` logs `program N: a shader is missing from the library, its draws are skipped`, or links a shader of the wrong stage; draws after `glDeleteProgram` of the current program log `draw with no usable program (0)`.

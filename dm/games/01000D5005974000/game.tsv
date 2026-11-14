@@ -1,0 +1,45 @@
+# Game profile of N++ (Switch, update 1.0.7 = v458752).
+# Format: see dm/games/README.md
+# Metanet Software / C++ on SDL and OpenGL through EGL, SDK 4.5.0: the game data is in the RomFS (NPP/
+# Palettes, Sounds, Music, Shaders, Levels). It renders with NVIDIA's desktop OpenGL 3.2 through EGL:
+# main imports EGL and takes GL calls from eglGetProcAddress, which the host's GL layer answers on Metal
+# (dm/gfx/gl/hle_gl.m). NVIDIA's GL driver (subsdk0) is never loaded.
+# The shaders are loose GLSL files in the RomFS (NPP/Shaders/glsl/*.vert and *.frag) translated offline
+# by dm/gfx/tools/gl_shaders.py; the host finds each by the hash of its source text.
+
+# ---- Identity ----
+title_id	01000D5005974000
+program_id	01000D5005974000
+
+# ---- App ----
+name	N++
+ipa	NPlusPlus.ipa
+app_category	public.app-category.games
+
+# ---- Versions ----
+build	v458752	1.0.7	main=21111086aaf48867511bf264a770945f	sdk=d95547528dcd684e2813ec83d338a472
+package	v458752
+shader_versions	v458752
+
+# ---- Files ----
+# not loaded, main takes nothing from them the host does not supply: subsdk0 (NintendoSDK_OpenGL)
+modules	main sdk
+romfs_marker	NPP/Fonts/jpSys216.fnt
+zip_store	.fnt:.ogg:.metallib
+
+# ---- Memory ----
+# main sets a heap of at most the pool − 64 MB: a 3328 MB heap region
+mem_reserve	0x100000000
+mem_alias	0x10000000
+mem_stack	0x10000000
+app_pool	0xCD500000
+# the NPDM declares 0 MB of system resource: IsVirtualAddressMemoryEnabled is false, as on Horizon (Big Brain Academy: Brain vs. Brain sets a heap only then)
+sys_resource	0x0
+
+# ---- Shader split ----
+# no NVN shaders: the profile's NVN tables stay empty and the GL library comes from gl_shaders.py
+shader_note	N++ has no NVN shaders (its GLSL shaders go through the GL layer)
+
+# ---- After the rewrite ----
+# used memory for the current rewritten modules, at least the default 64 MB
+mem_used	0x4c00000
